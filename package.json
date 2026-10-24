@@ -1,0 +1,35 @@
+{
+  "name": "globaltrade-crm",
+  "version": "1.0.0",
+  "description": "通用外贸智能管理平台 - 轻量级自托管外贸 CRM（客户管理、跟进记录、产品主数据、PI 与装箱单）",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "keywords": [
+    "crm",
+    "foreign-trade",
+    "export",
+    "trade-management",
+    "invoice",
+    "packing-list",
+    "pi",
+    "self-hosted",
+    "express",
+    "nodejs"
+  ],
+  "author": "",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": ""
+  },
+  "dependencies": {
+    "cors": "^2.8.6",
+    "express": "^5.3.0"
+  }
+}
