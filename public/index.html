@@ -973,8 +973,7 @@
                 <th>产品 SKU / 型号</th>
                 <th>中英文品名与规格</th>
                 <th>海关 HS Code · 退税率</th>
-                <th>装箱数 · 外箱尺寸 (cm)</th>
-                <th>单箱 CBM · 毛净重 (kg)</th>
+                <th>包装箱规（主件/配件）</th>
                 <th>成本 / 出厂 (CNY) · 外销 (USD)</th>
                 <th style="width: 130px;">操作</th>
               </tr>
@@ -1351,36 +1350,13 @@
         </div>
 
         <div style="background: #f8fafc; border: 1px dashed var(--border); border-radius: var(--radius); padding: 14px; margin-top: 10px;">
-          <div style="font-weight: 600; font-size: 13px; margin-bottom: 8px; color: #1e293b;">📦 国际标准包装箱规 (用于自动测算总箱数、毛重、CBM体积与集装箱装载)：</div>
-          <div class="form-row">
-            <div class="form-group">
-              <label class="form-label">单箱装量 (PCS/Carton) *</label>
-              <input type="number" id="pQtyPerCtn" class="input-control" style="width: 100%;" value="500" oninput="calcProductCbmLive()">
-            </div>
-            <div class="form-group">
-              <label class="form-label">外箱尺寸: 长 x 宽 x 高 (cm) *</label>
-              <div style="display: flex; gap: 6px; align-items: center;">
-                <input type="number" id="pCartonL" class="input-control" placeholder="长cm" style="width: 33%;" value="57" oninput="calcProductCbmLive()">
-                <span>x</span>
-                <input type="number" id="pCartonW" class="input-control" placeholder="宽cm" style="width: 33%;" value="38" oninput="calcProductCbmLive()">
-                <span>x</span>
-                <input type="number" id="pCartonH" class="input-control" placeholder="高cm" style="width: 33%;" value="42" oninput="calcProductCbmLive()">
-              </div>
-            </div>
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+            <div style="font-weight: 600; font-size: 13px; color: #1e293b;">📦 包装箱规（可添加多行，主件与配件分开）</div>
+            <button type="button" class="btn btn-outline btn-sm" onclick="addPackingRow()">➕ 添加箱规</button>
           </div>
-          <div class="form-row">
-            <div class="form-group">
-              <label class="form-label">单箱净重 N.W. (kg)</label>
-              <input type="number" step="0.1" id="pNw" class="input-control" style="width: 100%;" value="10.5">
-            </div>
-            <div class="form-group">
-              <label class="form-label">单箱毛重 G.W. (kg)</label>
-              <input type="number" step="0.1" id="pGw" class="input-control" style="width: 100%;" value="12.0">
-            </div>
-          </div>
-          <div style="font-size: 12px; color: #0284c7; margin-top: 6px; display: flex; justify-content: space-between;">
-            <span>自动计算单箱体积: <strong id="pCalculatedCbm">0.0910 CBM</strong></span>
-            <span>20GP 约装: <strong id="pEst20GP">307 箱</strong> · 40HQ 约装: <strong id="pEst40HQ">747 箱</strong></span>
+          <div id="packingRowsContainer"></div>
+          <div style="font-size: 12px; color: #0284c7; margin-top: 8px; padding-top: 8px; border-top: 1px dashed #e2e8f0; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
+            <span>20GP 约装: <strong id="pEst20GP">-</strong> · 40HQ 约装: <strong id="pEst40HQ">-</strong> <span style="color:#94a3b8;">(按主件箱规估算)</span></span>
           </div>
         </div>
       </div>
@@ -3124,12 +3100,24 @@
             <div style="font-size: 11px; color: #10b981; margin-top: 2px;">退税率: ${p.taxRefundRate || '13%'}</div>
           </td>
           <td>
-            <div>${p.qtyPerCarton} ${p.unit}/箱</div>
-            <div style="font-size: 11px; color: #64748b;">${p.cartonL || 0} x ${p.cartonW || 0} x ${p.cartonH || 0} cm</div>
-          </td>
-          <td>
-            <div><strong style="color: #0284c7;">${p.cbm || 0} CBM</strong></div>
-            <div style="font-size: 11px; color: #64748b;">GW: ${p.gwPerCarton || 0}kg / NW: ${p.nwPerCarton || 0}kg</div>
+            ${(() => {
+              const rows = (Array.isArray(p.packings) && p.packings.length > 0)
+                ? p.packings
+                : [{ label: '主件', qtyPerCarton: p.qtyPerCarton, cartonL: p.cartonL, cartonW: p.cartonW, cartonH: p.cartonH, cbm: p.cbm, nwPerCarton: p.nwPerCarton, gwPerCarton: p.gwPerCarton }];
+              if (rows.length === 1) {
+                const r = rows[0];
+                return `<div>${r.qtyPerCarton} ${p.unit}/箱</div>
+                        <div style="font-size: 11px; color: #64748b;">${r.cartonL || 0} × ${r.cartonW || 0} × ${r.cartonH || 0} cm</div>
+                        <div style="font-size: 11px; color: #0284c7; margin-top: 2px;">${r.cbm || 0} CBM · ${r.gwPerCarton || 0}kg</div>`;
+              }
+              return rows.map(r => `
+                <div style="margin-bottom: 4px; padding-bottom: 3px; border-bottom: 1px dashed #f1f5f9;">
+                  <span style="font-size: 11px; background: #eff6ff; color: #1e40af; padding: 1px 5px; border-radius: 3px;">${r.label}</span>
+                  <span style="font-size: 12px; margin-left: 4px;">${r.qtyPerCarton} ${p.unit}/箱</span>
+                  <div style="font-size: 10px; color: #64748b; margin-left: 2px;">${r.cartonL || 0}×${r.cartonW || 0}×${r.cartonH || 0}cm · ${r.cbm || 0}CBM · ${r.gwPerCarton || 0}kg</div>
+                </div>
+              `).join('') + `<div style="font-size: 10px; color: #10b981; margin-top: 2px;">共 ${rows.length} 种包装</div>`;
+            })()}
           </td>
           <td>
             <div style="font-size: 11px; color: #64748b;">成本 ¥${cost.toFixed(3)} · 出厂 ¥${factory.toFixed(3)}</div>
@@ -3244,6 +3232,107 @@
       applyImagePreview('');
     }
 
+    // ==================== 多行箱规 ====================
+    // 单个箱规行的 HTML 模板
+    function packingRowHtml(row, index) {
+      const r = row || {};
+      const label = r.label || (index === 0 ? '主件' : `配件${index}`);
+      return `
+        <div class="packing-row" style="display: grid; grid-template-columns: 110px 90px 1fr 80px 80px 80px 40px; gap: 6px; align-items: end; margin-bottom: 8px; padding: 8px; background: #fff; border: 1px solid #e2e8f0; border-radius: 6px;">
+          <div>
+            <label style="font-size: 10px; color: #64748b; display: block; margin-bottom: 2px;">名称</label>
+            <input type="text" class="input-control pk-label" style="width: 100%; font-size: 12px; padding: 4px 6px;" value="${label}" placeholder="主件/配件">
+          </div>
+          <div>
+            <label style="font-size: 10px; color: #64748b; display: block; margin-bottom: 2px;">每箱数量</label>
+            <input type="number" class="input-control pk-qty" style="width: 100%; font-size: 12px; padding: 4px 6px;" value="${r.qtyPerCarton || ''}" placeholder="500" oninput="calcPackingLive()">
+          </div>
+          <div>
+            <label style="font-size: 10px; color: #64748b; display: block; margin-bottom: 2px;">外箱 长×宽×高 (cm)</label>
+            <div style="display: flex; gap: 3px; align-items: center;">
+              <input type="number" class="input-control pk-l" style="width: 100%; font-size: 12px; padding: 4px 4px;" value="${r.cartonL || ''}" placeholder="长" oninput="calcPackingLive()">
+              <span style="color:#cbd5e1;">×</span>
+              <input type="number" class="input-control pk-w" style="width: 100%; font-size: 12px; padding: 4px 4px;" value="${r.cartonW || ''}" placeholder="宽" oninput="calcPackingLive()">
+              <span style="color:#cbd5e1;">×</span>
+              <input type="number" class="input-control pk-h" style="width: 100%; font-size: 12px; padding: 4px 4px;" value="${r.cartonH || ''}" placeholder="高" oninput="calcPackingLive()">
+            </div>
+          </div>
+          <div>
+            <label style="font-size: 10px; color: #64748b; display: block; margin-bottom: 2px;">净重 kg</label>
+            <input type="number" step="0.1" class="input-control pk-nw" style="width: 100%; font-size: 12px; padding: 4px 6px;" value="${r.nwPerCarton || ''}" placeholder="10" oninput="calcPackingLive()">
+          </div>
+          <div>
+            <label style="font-size: 10px; color: #64748b; display: block; margin-bottom: 2px;">毛重 kg</label>
+            <input type="number" step="0.1" class="input-control pk-gw" style="width: 100%; font-size: 12px; padding: 4px 6px;" value="${r.gwPerCarton || ''}" placeholder="12" oninput="calcPackingLive()">
+          </div>
+          <div>
+            <label style="font-size: 10px; color: #64748b; display: block; margin-bottom: 2px;">单价 \$</label>
+            <input type="number" step="0.001" class="input-control pk-price" style="width: 100%; font-size: 12px; padding: 4px 6px;" value="${r.refPriceUSD === null || r.refPriceUSD === undefined ? '' : r.refPriceUSD}" placeholder="沿用主价">
+          </div>
+          <div style="display: flex; align-items: center; height: 26px;">
+            <button type="button" class="btn btn-outline btn-sm" style="color: #ef4444; padding: 3px 6px; font-size: 11px;" onclick="removePackingRow(this)" title="删除此行">✕</button>
+          </div>
+        </div>
+      `;
+    }
+
+    function addPackingRow(row) {
+      const box = document.getElementById('packingRowsContainer');
+      if (!box) return;
+      const index = box.children.length;
+      const wrap = document.createElement('div');
+      wrap.innerHTML = packingRowHtml(row, index);
+      box.appendChild(wrap.firstElementChild);
+      calcPackingLive();
+    }
+
+    function removePackingRow(btn) {
+      const box = document.getElementById('packingRowsContainer');
+      const rows = box.querySelectorAll('.packing-row');
+      if (rows.length <= 1) return alert('至少保留一行箱规');
+      btn.closest('.packing-row').remove();
+      calcPackingLive();
+    }
+
+    // 实时显示每行 CBM 与集装箱装载估算（基于主件箱规）
+    function calcPackingLive() {
+      const rows = document.querySelectorAll('#packingRowsContainer .packing-row');
+      let primaryCbm = 0;
+
+      rows.forEach((row, i) => {
+        const l = Number(row.querySelector('.pk-l').value) || 0;
+        const w = Number(row.querySelector('.pk-w').value) || 0;
+        const h = Number(row.querySelector('.pk-h').value) || 0;
+        const cbm = (l * w * h) / 1000000;
+        if (i === 0) primaryCbm = cbm;
+      });
+
+      const el20 = document.getElementById('pEst20GP');
+      const el40 = document.getElementById('pEst40HQ');
+      if (primaryCbm > 0) {
+        if (el20) el20.innerText = Math.floor(28 / primaryCbm) + ' 箱';
+        if (el40) el40.innerText = Math.floor(68 / primaryCbm) + ' 箱';
+      } else {
+        if (el20) el20.innerText = '-';
+        if (el40) el40.innerText = '-';
+      }
+    }
+
+    // 读取表单里的所有箱规行
+    function collectPackingRows() {
+      const rows = document.querySelectorAll('#packingRowsContainer .packing-row');
+      return Array.from(rows).map((row, i) => ({
+        label: row.querySelector('.pk-label').value.trim() || (i === 0 ? '主件' : `配件${i}`),
+        qtyPerCarton: Number(row.querySelector('.pk-qty').value) || 0,
+        cartonL: Number(row.querySelector('.pk-l').value) || 0,
+        cartonW: Number(row.querySelector('.pk-w').value) || 0,
+        cartonH: Number(row.querySelector('.pk-h').value) || 0,
+        nwPerCarton: Number(row.querySelector('.pk-nw').value) || 0,
+        gwPerCarton: Number(row.querySelector('.pk-gw').value) || 0,
+        refPriceUSD: row.querySelector('.pk-price').value === '' ? null : Number(row.querySelector('.pk-price').value)
+      }));
+    }
+
     function resetProductForm() {
       editingProductId = null;
       pendingProductImage = '';
@@ -3258,16 +3347,17 @@
         if (el) el.value = '';
       });
       document.getElementById('pTaxRefund').value = '13';
-      document.getElementById('pQtyPerCtn').value = '500';
-      document.getElementById('pCartonL').value = '57';
-      document.getElementById('pCartonW').value = '38';
-      document.getElementById('pCartonH').value = '42';
-      document.getElementById('pNw').value = '10.5';
-      document.getElementById('pGw').value = '12.0';
+
+      // 重置箱规为空白的单行
+      const box = document.getElementById('packingRowsContainer');
+      if (box) {
+        box.innerHTML = '';
+        addPackingRow({ label: '主件', qtyPerCarton: 500, cartonL: 57, cartonW: 38, cartonH: 42, nwPerCarton: 10.5, gwPerCarton: 12 });
+      }
 
       document.getElementById('productModalTitle').innerText = '新建外贸标准产品主数据 (Product SKU Master)';
       document.getElementById('productSubmitBtn').innerText = '保存产品主数据';
-      calcProductCbmLive();
+      calcPackingLive();
     }
 
     function openAddProductModal() {
@@ -3295,33 +3385,29 @@
       const rate = String(p.taxRefundRate || '13%').replace('%', '');
       document.getElementById('pTaxRefund').value = rate;
 
-      document.getElementById('pQtyPerCtn').value = p.qtyPerCarton || 500;
-      document.getElementById('pCartonL').value = p.cartonL || 0;
-      document.getElementById('pCartonW').value = p.cartonW || 0;
-      document.getElementById('pCartonH').value = p.cartonH || 0;
-      document.getElementById('pNw').value = p.nwPerCarton || 0;
-      document.getElementById('pGw').value = p.gwPerCarton || 0;
+      // 填充多行箱规；老数据没有 packings 则用单箱规字段构造一行
+      const box = document.getElementById('packingRowsContainer');
+      box.innerHTML = '';
+      const list = (Array.isArray(p.packings) && p.packings.length > 0)
+        ? p.packings
+        : [{
+            label: '主件',
+            qtyPerCarton: p.qtyPerCarton,
+            cartonL: p.cartonL,
+            cartonW: p.cartonW,
+            cartonH: p.cartonH,
+            nwPerCarton: p.nwPerCarton,
+            gwPerCarton: p.gwPerCarton,
+            refPriceUSD: null
+          }];
+      list.forEach((row, i) => addPackingRow(row));
 
       applyImagePreview(pendingProductImage);
 
       document.getElementById('productModalTitle').innerText = '编辑产品主数据 — ' + (p.sku || '');
       document.getElementById('productSubmitBtn').innerText = '保存修改';
-      calcProductCbmLive();
+      calcPackingLive();
       openModal('addProductModal');
-    }
-
-    function calcProductCbmLive() {
-      const l = Number(document.getElementById('pCartonL').value) || 0;
-      const w = Number(document.getElementById('pCartonW').value) || 0;
-      const h = Number(document.getElementById('pCartonH').value) || 0;
-      const cbm = (l * w * h) / 1000000;
-      const cbmStr = cbm > 0 ? cbm.toFixed(4) + ' CBM' : '0.0000 CBM';
-      document.getElementById('pCalculatedCbm').innerText = cbmStr;
-
-      if (cbm > 0) {
-        document.getElementById('pEst20GP').innerText = Math.floor(28 / cbm) + ' 箱';
-        document.getElementById('pEst40HQ').innerText = Math.floor(68 / cbm) + ' 箱';
-      }
     }
 
     async function submitAddProduct() {
@@ -3329,6 +3415,11 @@
       const nameEn = document.getElementById('pNameEn').value.trim();
       if (!sku || !nameEn) return alert('产品型号/SKU 与 英文品名为必填项！');
 
+      const packings = collectPackingRows();
+      if (packings.length === 0) return alert('至少需要一行箱规');
+      if (packings.every(pk => !pk.qtyPerCarton)) return alert('第一行箱规必须填写每箱数量');
+
+      const first = packings[0];
       const payload = {
         sku,
         nameEn,
@@ -3339,12 +3430,14 @@
         refPriceUSD: Number(document.getElementById('pPrice').value) || 0,
         costPriceCNY: Number(document.getElementById('pCostCNY').value) || 0,
         factoryPriceCNY: Number(document.getElementById('pFactoryCNY').value) || 0,
-        qtyPerCarton: Number(document.getElementById('pQtyPerCtn').value) || 100,
-        cartonL: Number(document.getElementById('pCartonL').value) || 0,
-        cartonW: Number(document.getElementById('pCartonW').value) || 0,
-        cartonH: Number(document.getElementById('pCartonH').value) || 0,
-        nwPerCarton: Number(document.getElementById('pNw').value) || 0,
-        gwPerCarton: Number(document.getElementById('pGw').value) || 0,
+        packings: packings,
+        // 兼容字段：同步第一行
+        qtyPerCarton: first.qtyPerCarton,
+        cartonL: first.cartonL,
+        cartonW: first.cartonW,
+        cartonH: first.cartonH,
+        nwPerCarton: first.nwPerCarton,
+        gwPerCarton: first.gwPerCarton,
         image: pendingProductImage
       };
 
@@ -3677,6 +3770,18 @@
     }
 
     // 动态增删商品行（支持直接从产品主库选择，自动联动箱规体积）
+    // 取产品的箱规列表（兼容旧数据）
+    function getProductPackings(p) {
+      if (Array.isArray(p.packings) && p.packings.length > 0) return p.packings;
+      return [{
+        label: '主件',
+        qtyPerCarton: p.qtyPerCarton,
+        cartonL: p.cartonL, cartonW: p.cartonW, cartonH: p.cartonH,
+        cbm: p.cbm, nwPerCarton: p.nwPerCarton, gwPerCarton: p.gwPerCarton,
+        refPriceUSD: null
+      }];
+    }
+
     function addPiItemRow(productObj) {
       const container = document.getElementById('piItemsContainer');
       const div = document.createElement('div');
@@ -3688,8 +3793,8 @@
       div.style.borderRadius = '6px';
       div.style.border = '1px solid #e2e8f0';
 
-      const productOptions = globalProducts.map(p => 
-        `<option value="${p.id}" ${productObj && productObj.id === p.id ? 'selected' : ''}>[${p.sku}] ${p.nameEn} (箱规: ${p.qtyPerCarton}只/箱 · ${p.cbm}CBM)</option>`
+      const productOptions = globalProducts.map(p =>
+        `<option value="${p.id}" ${productObj && productObj.id === p.id ? 'selected' : ''}>[${p.sku}] ${p.nameEn}</option>`
       ).join('');
 
       div.innerHTML = `
@@ -3697,6 +3802,9 @@
           <select class="input-control pi-product-select" style="font-size: 12px;" onchange="onSelectProductInPi(this)">
             <option value="">-- 从产品库一键提取 --</option>
             ${productOptions}
+          </select>
+          <select class="input-control pi-packing-select" style="font-size: 11px; color: #047857;" onchange="onSelectPackingInPi(this)">
+            <option value="">-- 选择箱规（主件/配件）--</option>
           </select>
           <input type="text" class="input-control pi-item-name" placeholder="英文品名与规格 Description" value="${productObj ? productObj.nameEn : 'Standard Export Goods'}" style="font-size: 13px;">
         </div>
@@ -3714,18 +3822,56 @@
       `;
 
       if (productObj) {
-        div.dataset.cbm = productObj.cbm;
-        div.dataset.gwPerCarton = productObj.gwPerCarton;
-        div.dataset.nwPerCarton = productObj.nwPerCarton;
-        div.dataset.qtyPerCarton = productObj.qtyPerCarton;
+        div.dataset.productId = productObj.id;
+        fillPackingOptions(div, productObj);
+        applyPackingToRow(div, getProductPackings(productObj)[0]);
       } else {
-        div.dataset.cbm = 0.05;
-        div.dataset.gwPerCarton = 12;
-        div.dataset.nwPerCarton = 10.5;
-        div.dataset.qtyPerCarton = 100;
+        applyPackingToRow(div, null);
       }
 
       container.appendChild(div);
+      calcPiTotalsLive();
+    }
+
+    // 把某行产品的箱规列表填入下拉框
+    function fillPackingOptions(rowDiv, productObj) {
+      const sel = rowDiv.querySelector('.pi-packing-select');
+      if (!sel) return;
+      const list = getProductPackings(productObj);
+      sel.innerHTML = list.map((pk, i) =>
+        `<option value="${i}">${pk.label} · ${pk.qtyPerCarton || 0} ${productObj.unit || 'pcs'}/箱 · ${pk.cbm || 0} CBM</option>`
+      ).join('');
+    }
+
+    // 应用某个箱规行到表格行
+    function applyPackingToRow(rowDiv, packing) {
+      if (!packing) {
+        rowDiv.dataset.qtyPerCarton = 100;
+        rowDiv.dataset.cbm = 0.05;
+        rowDiv.dataset.gwPerCarton = 12;
+        rowDiv.dataset.nwPerCarton = 10.5;
+        rowDiv.dataset.packingLabel = '';
+        return;
+      }
+      rowDiv.dataset.qtyPerCarton = packing.qtyPerCarton || 100;
+      rowDiv.dataset.cbm = packing.cbm || 0.05;
+      rowDiv.dataset.gwPerCarton = packing.gwPerCarton || 12;
+      rowDiv.dataset.nwPerCarton = packing.nwPerCarton || 10.5;
+      rowDiv.dataset.packingLabel = packing.label || '';
+
+      if (packing.refPriceUSD !== null && packing.refPriceUSD !== undefined) {
+        const priceEl = rowDiv.querySelector('.pi-item-price');
+        if (priceEl) priceEl.value = packing.refPriceUSD;
+      }
+    }
+
+    function onSelectPackingInPi(sel) {
+      const rowDiv = sel.closest('.pi-item-row');
+      const p = globalProducts.find(x => x.id === rowDiv.dataset.productId);
+      if (!p) return;
+      const list = getProductPackings(p);
+      const pk = list[Number(sel.value)];
+      if (pk) applyPackingToRow(rowDiv, pk);
       calcPiTotalsLive();
     }
 
@@ -3734,12 +3880,14 @@
       const row = sel.closest('.pi-item-row');
       const p = globalProducts.find(item => item.id === pId);
       if (p) {
+        row.dataset.productId = p.id;
         row.querySelector('.pi-item-name').value = p.nameEn;
         row.querySelector('.pi-item-price').value = p.refPriceUSD;
-        row.dataset.cbm = p.cbm;
-        row.dataset.gwPerCarton = p.gwPerCarton;
-        row.dataset.nwPerCarton = p.nwPerCarton;
-        row.dataset.qtyPerCarton = p.qtyPerCarton;
+        // 重新填充箱规下拉，默认选第一行
+        fillPackingOptions(row, p);
+        applyPackingToRow(row, getProductPackings(p)[0]);
+        const pkSel = row.querySelector('.pi-packing-select');
+        if (pkSel) pkSel.value = '0';
       }
       calcPiTotalsLive();
     }
@@ -3795,16 +3943,18 @@
         const name = row.querySelector('.pi-item-name').value.trim();
         const qty = Number(row.querySelector('.pi-item-qty').value) || 0;
         const price = Number(row.querySelector('.pi-item-price').value) || 0;
+        const packingLabel = row.dataset.packingLabel || '';
         if (name && qty > 0) {
           items.push({
-            name,
+            name: packingLabel ? `${name} [${packingLabel}]` : name,
+            packingLabel: packingLabel,
             quantity: qty,
             unitPrice: price,
             qtyPerCarton: Number(row.dataset.qtyPerCarton) || 100,
             cbm: Number(row.dataset.cbm) || 0.05,
             gwPerCarton: Number(row.dataset.gwPerCarton) || 12,
             nwPerCarton: Number(row.dataset.nwPerCarton) || 10.5,
-            spec: "Export standard commercial packing"
+            spec: packingLabel ? `Packing: ${packingLabel}` : "Export standard commercial packing"
           });
         }
       });

@@ -541,19 +541,60 @@ app.get('/api/products', (req, res) => {
   res.json({ list: data.products || [] });
 });
 
-// 产品字段构造（新增与编辑共用）
-function buildProductFields(body) {
-  const l = Number(body.cartonL || 0);
-  const w = Number(body.cartonW || 0);
-  const h = Number(body.cartonH || 0);
+// 箱规行构造：一行代表一种包装（主件 / 配件 / 内塞 等）
+function buildPackingRow(raw, index) {
+  const l = Number(raw.cartonL || 0);
+  const w = Number(raw.cartonW || 0);
+  const h = Number(raw.cartonH || 0);
   const cbm = (l > 0 && w > 0 && h > 0)
     ? Number(((l * w * h) / 1000000).toFixed(4))
-    : (Number(body.cbm) || 0.05);
+    : Number(raw.cbm || 0);
 
+  return {
+    id: raw.id || `PK-${Date.now().toString().slice(-6)}-${index}`,
+    label: String(raw.label || (index === 0 ? '主件' : `配件${index}`)).trim(),
+    qtyPerCarton: Number(raw.qtyPerCarton || 0),
+    cartonL: l,
+    cartonW: w,
+    cartonH: h,
+    cbm: cbm,
+    nwPerCarton: Number(raw.nwPerCarton || 0),
+    gwPerCarton: Number(raw.gwPerCarton || 0),
+    // 该箱规行单独的价格（选填，留空则沿用产品主价格）
+    refPriceUSD: raw.refPriceUSD === undefined || raw.refPriceUSD === ''
+      ? null : Number(raw.refPriceUSD)
+  };
+}
+
+// 产品字段构造（新增与编辑共用）
+function buildProductFields(body) {
   const rate = body.taxRefundRate;
   const taxRefundRate = rate
     ? (String(rate).includes('%') ? String(rate) : `${rate}%`)
     : '13%';
+
+  // 多行箱规：优先使用 packings 数组
+  let packings = [];
+  if (Array.isArray(body.packings) && body.packings.length > 0) {
+    packings = body.packings.map((p, i) => buildPackingRow(p, i));
+  } else {
+    // 兼容旧格式：把单箱规字段转成一行
+    const old = buildPackingRow({
+      label: '主件',
+      qtyPerCarton: body.qtyPerCarton,
+      cartonL: body.cartonL,
+      cartonW: body.cartonW,
+      cartonH: body.cartonH,
+      cbm: body.cbm,
+      nwPerCarton: body.nwPerCarton,
+      gwPerCarton: body.gwPerCarton,
+      refPriceUSD: body.refPriceUSD
+    }, 0);
+    if (old.qtyPerCarton > 0) packings = [old];
+  }
+
+  // 第一行箱规同步到旧的单值字段，保证向后兼容（PI 未指定箱规行时仍可算）
+  const primary = packings[0] || {};
 
   return {
     sku: body.sku || `SKU-${Date.now().toString().slice(-4)}`,
@@ -565,15 +606,18 @@ function buildProductFields(body) {
     refPriceUSD: Number(body.refPriceUSD || 0),
     costPriceCNY: Number(body.costPriceCNY || 0),
     factoryPriceCNY: Number(body.factoryPriceCNY || 0),
-    qtyPerCarton: Number(body.qtyPerCarton || 500),
-    cartonL: l,
-    cartonW: w,
-    cartonH: h,
-    cbm: cbm,
-    nwPerCarton: Number(body.nwPerCarton || 10),
-    gwPerCarton: Number(body.gwPerCarton || 11.5),
     spec: body.spec || '',
-    image: body.image || ''
+    image: body.image || '',
+    // 多行箱规（新）
+    packings: packings,
+    // 兼容字段：取第一行
+    qtyPerCarton: Number(primary.qtyPerCarton || body.qtyPerCarton || 500),
+    cartonL: Number(primary.cartonL ?? body.cartonL ?? 0),
+    cartonW: Number(primary.cartonW ?? body.cartonW ?? 0),
+    cartonH: Number(primary.cartonH ?? body.cartonH ?? 0),
+    cbm: Number(primary.cbm ?? body.cbm ?? 0.05),
+    nwPerCarton: Number(primary.nwPerCarton ?? body.nwPerCarton ?? 10),
+    gwPerCarton: Number(primary.gwPerCarton ?? body.gwPerCarton ?? 11.5)
   };
 }
 
@@ -638,21 +682,42 @@ app.post('/api/quotations', (req, res) => {
   const body = req.body;
   const now = new Date().toISOString().split('T')[0];
 
-  const total = (body.items || []).reduce((sum, item) => sum + (Number(item.quantity) * Number(item.unitPrice)), 0);
-
-  let totalCartons = 0;
-  let totalGw = 0;
-  let totalNw = 0;
-  let totalCbm = 0;
-
-  (body.items || []).forEach(it => {
+  // 逐行计算：每行可来自不同的箱规（主件 / 配件 / 内塞），各自独立算箱数
+  const items = (body.items || []).map((it, idx) => {
     const qty = Number(it.quantity || 0);
-    const qpc = Number(it.qtyPerCarton || 100);
-    const ctns = Math.ceil(qty / (qpc > 0 ? qpc : 100));
-    totalCartons += ctns;
-    totalGw += (ctns * Number(it.gwPerCarton || 12));
-    totalNw += (ctns * Number(it.nwPerCarton || 10.5));
-    totalCbm += (ctns * Number(it.cbm || 0.05));
+    const unitPrice = Number(it.unitPrice || 0);
+    const qpc = Number(it.qtyPerCarton || 100) || 100;
+
+    const cartons = Math.ceil(qty / qpc);
+    const cbmSingle = Number(it.cbm || 0.05);
+    const gwSingle = Number(it.gwPerCarton || 12);
+    const nwSingle = Number(it.nwPerCarton || 10.5);
+
+    return {
+      ...it,
+      lineNo: idx + 1,
+      quantity: qty,
+      unitPrice: unitPrice,
+      qtyPerCarton: qpc,
+      cartons: cartons,
+      cbm: cbmSingle,
+      gwPerCarton: gwSingle,
+      nwPerCarton: nwSingle,
+      lineCbm: Number((cartons * cbmSingle).toFixed(3)),
+      lineGw: Number((cartons * gwSingle).toFixed(2)),
+      lineNw: Number((cartons * nwSingle).toFixed(2)),
+      lineAmount: Number((qty * unitPrice).toFixed(2))
+    };
+  });
+
+  const total = items.reduce((s, it) => s + it.lineAmount, 0);
+  let totalCartons = 0, totalGw = 0, totalNw = 0, totalCbm = 0;
+
+  items.forEach(it => {
+    totalCartons += it.cartons;
+    totalGw += it.lineGw;
+    totalNw += it.lineNw;
+    totalCbm += it.lineCbm;
   });
 
   const newPi = {
@@ -665,7 +730,7 @@ app.post('/api/quotations', (req, res) => {
     tradeTerm: body.tradeTerm || 'FOB Ningbo',
     paymentTerm: body.paymentTerm || '30% T/T Deposit, 70% before shipment',
     leadTime: body.leadTime || '25-30 days after sample approval',
-    items: body.items || [],
+    items: items,
     totalAmount: Number(total.toFixed(2)),
     totalCartons: totalCartons,
     totalGw: Number(totalGw.toFixed(2)),
