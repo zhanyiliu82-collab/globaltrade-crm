@@ -1,4 +1,5 @@
 const express = require('express');
+const rates = require("./rates");
 const cors = require('cors');
 const fs = require('fs');
 const path = require('path');
@@ -120,7 +121,6 @@ app.post('/api/auth/send-sms', (req, res) => {
   res.json({
     success: true,
     message: '短信验证码发送成功',
-    devCode: code,
     expireMinutes: 5
   });
 });
@@ -689,6 +689,27 @@ app.delete('/api/quotations/:id', (req, res) => {
 });
 
 // 健康检查
+// 汇率查询（数据源：中国银行外汇牌价，缓存 30 分钟）
+// ?force=1 强制刷新缓存
+app.get('/api/rates', async (req, res) => {
+  try {
+    const force = req.query.force === '1';
+    const d = await rates.fetchRates(force);
+    res.json({
+      success: true,
+      source: '中国银行外汇牌价',
+      publishTime: d.publishTime,
+      cached: !!d.cached,
+      stale: !!d.stale,
+      ageSeconds: d.age || 0,
+      count: d.rates.length,
+      rates: d.rates
+    });
+  } catch (e) {
+    res.status(503).json({ error: '汇率获取失败：' + e.message });
+  }
+});
+
 app.get('/healthz', (req, res) => {
   res.json({ status: 'ok', uptime: process.uptime(), time: new Date().toISOString() });
 });

@@ -718,6 +718,9 @@
       <div class="nav-item active" onclick="switchTab('dashboard')">
         <span>📊</span> 业务数据看板
       </div>
+      <div class="nav-item" onclick="switchTab('rates')">
+        <span>💱</span> 汇率查询
+      </div>
       <div class="nav-item" onclick="switchTab('private')">
         <span>👥</span> 我的客户 (私海)
       </div>
@@ -851,6 +854,41 @@
           </div>
           <div style="padding: 24px;" id="funnelContainer">
             <!-- 漏斗渲染 -->
+          </div>
+        </div>
+      </div>
+
+      <!-- 视图：全球汇率查询 -->
+      <div id="tab-rates" style="display: none;">
+        <div class="card">
+          <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+            <div>
+              <div style="font-weight: 600;">💱 全球汇率查询 (Exchange Rates)</div>
+              <span style="font-size: 12px; color: var(--text-muted);" id="ratesMeta">数据源：中国银行外汇牌价 · 自动缓存 30 分钟</span>
+            </div>
+            <button class="btn btn-outline btn-sm" onclick="loadRates(true)">🔄 强制刷新</button>
+          </div>
+          <div class="filter-bar">
+            <input type="text" id="ratesSearchInput" class="input-control" placeholder="搜索货币名称或代码（如 美元、USD、日本）" style="width: 300px;" oninput="filterRatesTable()">
+            <span style="font-size: 12px; color: var(--text-muted); align-self: center;" id="ratesCount"></span>
+          </div>
+          <div style="overflow-x: auto;">
+            <table>
+              <thead>
+                <tr>
+                  <th style="width: 60px;">代码</th>
+                  <th>货币名称</th>
+                  <th style="text-align: right;">现汇买入价</th>
+                  <th style="text-align: right;">现汇卖出价</th>
+                  <th style="text-align: right;">中行折算价</th>
+                  <th style="text-align: right; background: #eff6ff;">1 外币 ≈ 人民币</th>
+                  <th style="text-align: right; background: #eff6ff;">100 人民币 ≈</th>
+                </tr>
+              </thead>
+              <tbody id="ratesTableBody">
+                <tr><td colspan="7" style="text-align: center; padding: 32px; color: var(--text-muted);">点击上方「强制刷新」加载汇率数据</td></tr>
+              </tbody>
+            </table>
           </div>
         </div>
       </div>
@@ -2565,11 +2603,9 @@
         const d = await res.json();
 
         if (res.ok) {
-          noticeText.innerHTML = `【GlobalTrade CRM】您的注册绑定验证码为：<strong style="font-size: 15px; color: #059669; font-family: monospace; letter-spacing: 2px;">${d.devCode}</strong> (5分钟有效)`;
+          // 出于安全考虑，验证码不再返回给前端，仅发送到绑定的手机（当前为模拟投递，见服务端日志）
+          noticeText.innerHTML = `验证码已发送${d.devPhoneHint ? '至 ' + d.devPhoneHint : ''}，请查收短信（5 分钟内有效）`;
           noticeBox.style.display = 'block';
-
-          // 自动填充验证码至输入框
-          document.getElementById('regSmsCode').value = d.devCode;
 
           // 开启 60 秒倒计时
           regSmsCountdown = 60;
@@ -2696,12 +2732,9 @@
         const d = await res.json();
 
         if (res.ok) {
-          // 本地模拟环境提示并自动帮用户回显
-          noticeText.innerHTML = `【GlobalTrade CRM】您的登录验证码为：<strong style="font-size: 15px; color: #059669; font-family: monospace; letter-spacing: 2px;">${d.devCode}</strong> (5分钟内有效)`;
+          // 出于安全考虑，验证码不再返回给前端，仅投递到绑定手机（当前为模拟投递，见服务端日志）
+          noticeText.innerHTML = `验证码已发送${d.devPhoneHint ? '至 ' + d.devPhoneHint : ''}，请查收短信（5 分钟内有效）`;
           noticeBox.style.display = 'block';
-
-          // 自动填充验证码至输入框提升体验
-          document.getElementById('loginSmsCode').value = d.devCode;
 
           // 开启 60 秒倒计时
           smsCountdown = 60;
@@ -2927,7 +2960,7 @@
       const activeNav = Array.from(document.querySelectorAll('.nav-item')).find(el => el.getAttribute('onclick').includes(tabId));
       if (activeNav) activeNav.classList.add('active');
 
-      const tabs = ['dashboard', 'private', 'public', 'product', 'quotation', 'ai-writer'];
+      const tabs = ['dashboard', 'rates', 'private', 'public', 'product', 'quotation', 'ai-writer'];
       tabs.forEach(t => {
         const el = document.getElementById(`tab-${t}`);
         if (el) el.style.display = (t === tabId) ? 'block' : 'none';
@@ -2935,6 +2968,7 @@
 
       const titleMap = {
         'dashboard': '业务数据看板',
+        'rates': '全球汇率查询 (中国银行外汇牌价)',
         'private': '我的客户 (私海列表)',
         'public': '公海客户资源池',
         'product': '标准外贸产品主数据库 (Product Master Catalog)',
@@ -2942,6 +2976,105 @@
         'ai-writer': 'AI 外贸开发信与客户触达引擎'
       };
       document.getElementById('pageTitle').innerText = titleMap[tabId] || '外贸管理平台';
+
+      // 首次进入汇率页时自动加载
+      if (tabId === 'rates' && ratesCache.length === 0 && !ratesLoading) {
+        loadRates();
+      }
+    }
+
+    // ==================== 汇率查询 ====================
+    // 注意：缓存变量必须在任何调用前声明，避免 TDZ 错误
+    let ratesCache = [];
+    let ratesLoading = false;
+    let ratesMeta = null;
+
+    async function loadRates(force) {
+      if (ratesLoading) return;
+      ratesLoading = true;
+
+      const tbody = document.getElementById('ratesTableBody');
+      if (tbody) {
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:32px;color:var(--text-muted);">正在从中国银行获取汇率…</td></tr>`;
+      }
+
+      try {
+        const url = force ? '/api/rates?force=1' : '/api/rates';
+        const res = await fetch(url, { headers: getAuthHeaders() });
+        const d = await res.json();
+
+        if (!res.ok || !d.success) {
+          if (tbody) {
+            tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:32px;color:#ef4444;">${d.error || '汇率获取失败'}</td></tr>`;
+          }
+          return;
+        }
+
+        ratesCache = d.rates || [];
+        ratesMeta = d;
+        renderRatesTable();
+
+        const metaEl = document.getElementById('ratesMeta');
+        if (metaEl) {
+          const parts = ['数据源：' + (d.source || '中国银行外汇牌价')];
+          if (d.publishTime) parts.push('牌价时间：' + d.publishTime);
+          if (d.cached) parts.push('缓存 ' + Math.round((d.ageSeconds || 0) / 60) + ' 分钟前');
+          if (d.stale) parts.push('⚠ 抓取失败，显示上次缓存');
+          metaEl.innerText = parts.join(' · ');
+        }
+      } catch (err) {
+        if (tbody) {
+          tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:32px;color:#ef4444;">网络错误：${err.message}</td></tr>`;
+        }
+      } finally {
+        ratesLoading = false;
+      }
+    }
+
+    function renderRatesTable() {
+      const tbody = document.getElementById('ratesTableBody');
+      if (!tbody) return;
+
+      const kw = (document.getElementById('ratesSearchInput')?.value || '').trim().toLowerCase();
+      let list = ratesCache;
+      if (kw) {
+        list = list.filter(r =>
+          (r.cnName || '').toLowerCase().includes(kw) ||
+          (r.code || '').toLowerCase().includes(kw)
+        );
+      }
+
+      const countEl = document.getElementById('ratesCount');
+      if (countEl) {
+        countEl.innerText = `共 ${list.length} 种货币` + (ratesCache.length !== list.length ? ` / 全部 ${ratesCache.length} 种` : '');
+      }
+
+      if (list.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:32px;color:var(--text-muted);">${kw ? '没有匹配的货币' : '暂无数据'}</td></tr>`;
+        return;
+      }
+
+      const flagOf = code => code ? isoToFlag(code) : '🌐';
+      const fmt = v => (v === null || v === undefined) ? '-' : Number(v).toFixed(4);
+
+      tbody.innerHTML = list.map(r => {
+        const inv = r.cny > 0 ? (100 / r.cny) : null;  // 100 CNY 能换多少外币
+        return `
+          <tr>
+            <td><code style="background:#f1f5f9;padding:2px 6px;border-radius:4px;color:#0284c7;font-weight:600;">${r.code || '-'}</code></td>
+            <td><span style="margin-right:4px;">${flagOf(r.code)}</span>${r.cnName}</td>
+            <td style="text-align:right;color:#64748b;">${fmt(r.buy)}</td>
+            <td style="text-align:right;color:#64748b;">${fmt(r.sell)}</td>
+            <td style="text-align:right;">${fmt(r.cny ? r.cny * 100 : null)}</td>
+            <td style="text-align:right;background:#f8fafc;font-weight:700;color:#2563eb;">¥${fmt(r.cny)}</td>
+            <td style="text-align:right;background:#f8fafc;color:#475569;">${inv ? inv.toFixed(2) : '-'} ${r.code || ''}</td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function filterRatesTable() {
+      renderRatesTable();
     }
 
     // ==================== 产品库相关逻辑 ====================

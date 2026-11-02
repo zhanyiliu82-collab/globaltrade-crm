@@ -33,3 +33,12 @@ Thumbs.db
 # 临时文件
 *.tmp
 tmp/
+
+# 临时补丁脚本（服务器上的历史遗留，不入库）
+*.patch.js
+fix_*.js
+patch_*.js
+wire_*.js
+add_rates_*.js
+repair_*.py
+fix_*.py
