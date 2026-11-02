@@ -101,21 +101,27 @@ function parseBoc(html) {
     const cashBuy = num(cells[2]);
     const sell = num(cells[3]);
     const mid = num(cells[5]);
-    const price100 = mid ?? sell ?? buy ?? cashBuy;
+
+    // 采用「现汇买入价」作为主汇率：这是银行买入外汇的价格，
+    // 也是外贸结汇时实际到账的参考价（比折算价更贴近真实收汇）。
+    // 若买入价缺失，依次回退：中行折算价 → 现汇卖出价 → 现钞买入价。
+    const price100 = buy ?? mid ?? sell ?? cashBuy;
     if (price100 === null || price100 <= 0) continue;
 
     if (!publishTime && cells[6]) publishTime = cells[6];
 
-    // 特殊：日元、韩元等以 100 为单位；越南盾、印尼卢比等中行按 100 给但数值极小
     // 统一：中行所有货币都是「100 外币兑人民币」
     out.set(name, {
       cnName: name,
       code: ISO_MAP[name] || "",
       per100: price100,
       unit: 100,
-      cny: price100 / 100,      // 1 外币 = ? CNY
+      cny: price100 / 100,           // 1 外币 = ? CNY（现汇买入价）
+      rateType: buy !== null ? '现汇买入价' : (mid !== null ? '中行折算价' : (sell !== null ? '现汇卖出价' : '现钞买入价')),
       buy: buy !== null ? buy / 100 : null,
+      cashBuy: cashBuy !== null ? cashBuy / 100 : null,
       sell: sell !== null ? sell / 100 : null,
+      mid: mid !== null ? mid / 100 : null,
     });
   }
 
