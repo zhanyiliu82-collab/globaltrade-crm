@@ -2912,7 +2912,7 @@
     // ==================== 产品库相关逻辑 ====================
     async function loadProducts() {
       try {
-        const res = await fetch('/api/products');
+        const res = await fetch('/api/products', { headers: getAuthHeaders() });
         const d = await res.json();
         globalProducts = d.list || [];
         renderProductTable();
@@ -2991,7 +2991,7 @@
 
       await fetch('/api/products', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders(),
         body: JSON.stringify({
           sku,
           nameEn,
@@ -3015,14 +3015,14 @@
 
     async function deleteProduct(id) {
       if (!confirm('确定删除该产品吗？')) return;
-      await fetch(`/api/products/${id}`, { method: 'DELETE' });
+      await fetch(`/api/products/${id}`, { method: 'DELETE', headers: getAuthHeaders() });
       loadProducts();
     }
 
     // 加载看板统计
     async function loadStats() {
       try {
-        const res = await fetch('/api/dashboard/stats');
+        const res = await fetch('/api/dashboard/stats', { headers: getAuthHeaders() });
         const d = await res.json();
         document.getElementById('statTotalCust').innerText = d.totalCustomers;
         document.getElementById('statPrivateCust').innerText = d.privateCustomers;
@@ -3180,7 +3180,7 @@
       document.getElementById('dtlWaContainer').innerHTML = waButton;
 
       // 拉取跟进时间线
-      const res = await fetch(`/api/followups?customerId=${id}`);
+      const res = await fetch(`/api/followups?customerId=${id}`, { headers: getAuthHeaders() });
       const d = await res.json();
       const timelineEl = document.getElementById('dtlTimeline');
 
@@ -3209,7 +3209,7 @@
 
       await fetch('/api/followups', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders(),
         body: JSON.stringify({
           customerId: currentDetailCustomerId,
           type: document.getElementById('flwType').value,
@@ -3260,7 +3260,7 @@
     // 加载报价与单证列表
     async function loadQuotations() {
       try {
-        const res = await fetch('/api/quotations');
+        const res = await fetch('/api/quotations', { headers: getAuthHeaders() });
         const d = await res.json();
         globalQuotations = d.list || [];
         const tbody = document.getElementById('quotationTableBody');
@@ -3296,7 +3296,7 @@
     async function deleteQuotation(id) {
       if (!confirm('确定要删除该外贸形式发票 (PI) 与对应装箱单吗？删除后不可恢复。')) return;
       try {
-        const res = await fetch(`/api/quotations/${id}`, { method: 'DELETE' });
+        const res = await fetch(`/api/quotations/${id}`, { method: 'DELETE', headers: getAuthHeaders() });
         if (res.ok) {
           loadQuotations();
           loadStats();
@@ -3447,7 +3447,7 @@
 
       await fetch('/api/quotations', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders(),
         body: JSON.stringify({
           customerId: cust.id,
           customerName: cust.companyName,
