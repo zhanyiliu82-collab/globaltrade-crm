@@ -1319,34 +1319,108 @@
 
     // 覆盖全球 40+ 核心出口贸易国与 IANA 标准时区映射表
     const COUNTRY_TIMEZONE_MAP = {
-      // 北美
-      'United States': 'America/New_York', 'USA': 'America/New_York',
-      'Canada': 'America/Toronto',
-      'Mexico': 'America/Mexico_City',
-      // 拉美
-      'Brazil': 'America/Sao_Paulo', 'Argentina': 'America/Argentina/Buenos_Aires',
-      'Chile': 'America/Santiago', 'Colombia': 'America/Bogota', 'Peru': 'America/Lima',
-      // 欧洲
-      'Germany': 'Europe/Berlin', 'United Kingdom': 'Europe/London', 'UK': 'Europe/London',
-      'France': 'Europe/Paris', 'Italy': 'Europe/Rome', 'Spain': 'Europe/Madrid',
-      'Netherlands': 'Europe/Amsterdam', 'Belgium': 'Europe/Brussels',
-      'Sweden': 'Europe/Stockholm', 'Norway': 'Europe/Oslo', 'Denmark': 'Europe/Copenhagen',
-      'Finland': 'Europe/Helsinki', 'Poland': 'Europe/Warsaw', 'Switzerland': 'Europe/Zurich',
-      'Austria': 'Europe/Vienna', 'Turkey': 'Europe/Istanbul', 'Russia': 'Europe/Moscow',
-      // 中东与北非
-      'United Arab Emirates': 'Asia/Dubai', 'UAE': 'Asia/Dubai',
-      'Saudi Arabia': 'Asia/Riyadh', 'Qatar': 'Asia/Qatar', 'Kuwait': 'Asia/Kuwait',
-      'Egypt': 'Africa/Cairo',
-      // 亚太
-      'China': 'Asia/Shanghai', 'Hong Kong': 'Asia/Hong_Kong',
-      'Singapore': 'Asia/Singapore', 'Japan': 'Asia/Tokyo',
-      'South Korea': 'Asia/Seoul', 'Korea': 'Asia/Seoul',
-      'Thailand': 'Asia/Bangkok', 'Vietnam': 'Asia/Ho_Chi_Minh',
-      'Malaysia': 'Asia/Kuala_Lumpur', 'Indonesia': 'Asia/Jakarta',
-      'Philippines': 'Asia/Manila', 'India': 'Asia/Kolkata',
-      // 非洲与大洋洲
-      'South Africa': 'Africa/Johannesburg', 'Nigeria': 'Africa/Lagos', 'Kenya': 'Africa/Nairobi',
-      'Australia': 'Australia/Sydney', 'New Zealand': 'Pacific/Auckland'
+      // ── 北美 ──
+      'United States': 'America/New_York', 'USA': 'America/New_York', 'US': 'America/New_York',
+      'Canada': 'America/Toronto', 'CA': 'America/Toronto',
+      'Mexico': 'America/Mexico_City', 'MX': 'America/Mexico_City',
+      // ── 中美洲与加勒比 ──
+      'Guatemala': 'America/Guatemala', 'Costa Rica': 'America/Costa_Rica',
+      'Panama': 'America/Panama', 'Dominican Republic': 'America/Santo_Domingo',
+      'Cuba': 'America/Havana', 'Jamaica': 'America/Jamaica',
+      'Puerto Rico': 'America/Puerto_Rico', 'Honduras': 'America/Tegucigalpa',
+      'El Salvador': 'America/El_Salvador', 'Nicaragua': 'America/Managua',
+      // ── 南美 ──
+      'Brazil': 'America/Sao_Paulo', 'BR': 'America/Sao_Paulo',
+      'Argentina': 'America/Argentina/Buenos_Aires', 'AR': 'America/Argentina/Buenos_Aires',
+      'Chile': 'America/Santiago', 'CL': 'America/Santiago',
+      'Colombia': 'America/Bogota', 'CO': 'America/Bogota',
+      'Peru': 'America/Lima', 'PE': 'America/Lima',
+      'Venezuela': 'America/Caracas', 'Ecuador': 'America/Guayaquil',
+      'Bolivia': 'America/La_Paz', 'Paraguay': 'America/Asuncion',
+      'Uruguay': 'America/Montevideo', 'Guyana': 'America/Guyana',
+      // ── 西欧与北欧 ──
+      'Germany': 'Europe/Berlin', 'DE': 'Europe/Berlin',
+      'United Kingdom': 'Europe/London', 'UK': 'Europe/London', 'GB': 'Europe/London',
+      'France': 'Europe/Paris', 'FR': 'Europe/Paris',
+      'Italy': 'Europe/Rome', 'IT': 'Europe/Rome',
+      'Spain': 'Europe/Madrid', 'ES': 'Europe/Madrid',
+      'Portugal': 'Europe/Lisbon', 'PT': 'Europe/Lisbon',
+      'Netherlands': 'Europe/Amsterdam', 'NL': 'Europe/Amsterdam',
+      'Belgium': 'Europe/Brussels', 'BE': 'Europe/Brussels',
+      'Luxembourg': 'Europe/Luxembourg',
+      'Ireland': 'Europe/Dublin', 'IE': 'Europe/Dublin',
+      'Sweden': 'Europe/Stockholm', 'SE': 'Europe/Stockholm',
+      'Norway': 'Europe/Oslo', 'NO': 'Europe/Oslo',
+      'Denmark': 'Europe/Copenhagen', 'DK': 'Europe/Copenhagen',
+      'Finland': 'Europe/Helsinki', 'FI': 'Europe/Helsinki',
+      'Iceland': 'Atlantic/Reykjavik', 'IS': 'Atlantic/Reykjavik',
+      // ── 中欧与东欧 ──
+      'Poland': 'Europe/Warsaw', 'PL': 'Europe/Warsaw',
+      'Switzerland': 'Europe/Zurich', 'CH': 'Europe/Zurich',
+      'Austria': 'Europe/Vienna', 'AT': 'Europe/Vienna',
+      'Czech Republic': 'Europe/Prague', 'CZ': 'Europe/Prague',
+      'Slovakia': 'Europe/Bratislava', 'SK': 'Europe/Bratislava',
+      'Hungary': 'Europe/Budapest', 'HU': 'Europe/Budapest',
+      'Romania': 'Europe/Bucharest', 'RO': 'Europe/Bucharest',
+      'Bulgaria': 'Europe/Sofia', 'BG': 'Europe/Sofia',
+      'Greece': 'Europe/Athens', 'GR': 'Europe/Athens',
+      'Croatia': 'Europe/Zagreb', 'HR': 'Europe/Zagreb',
+      'Slovenia': 'Europe/Ljubljana', 'SI': 'Europe/Ljubljana',
+      'Serbia': 'Europe/Belgrade', 'RS': 'Europe/Belgrade',
+      'Ukraine': 'Europe/Kiev', 'UA': 'Europe/Kiev',
+      'Russia': 'Europe/Moscow', 'RU': 'Europe/Moscow',
+      'Turkey': 'Europe/Istanbul', 'TR': 'Europe/Istanbul',
+      'Lithuania': 'Europe/Vilnius', 'Latvia': 'Europe/Riga', 'Estonia': 'Europe/Tallinn',
+      // ── 中东与西亚 ──
+      'United Arab Emirates': 'Asia/Dubai', 'UAE': 'Asia/Dubai', 'AE': 'Asia/Dubai',
+      'Saudi Arabia': 'Asia/Riyadh', 'SA': 'Asia/Riyadh',
+      'Qatar': 'Asia/Qatar', 'QA': 'Asia/Qatar',
+      'Kuwait': 'Asia/Kuwait', 'KW': 'Asia/Kuwait',
+      'Bahrain': 'Asia/Bahrain', 'BH': 'Asia/Bahrain',
+      'Oman': 'Asia/Muscat', 'OM': 'Asia/Muscat',
+      'Israel': 'Asia/Jerusalem', 'IL': 'Asia/Jerusalem',
+      'Jordan': 'Asia/Amman', 'JO': 'Asia/Amman',
+      'Lebanon': 'Asia/Beirut', 'Iraq': 'Asia/Baghdad', 'Iran': 'Asia/Tehran',
+      // ── 北非与非洲 ──
+      'Egypt': 'Africa/Cairo', 'EG': 'Africa/Cairo',
+      'Morocco': 'Africa/Casablanca', 'MA': 'Africa/Casablanca',
+      'Algeria': 'Africa/Algiers', 'DZ': 'Africa/Algiers',
+      'Tunisia': 'Africa/Tunis', 'TN': 'Africa/Tunis',
+      'Libya': 'Africa/Tripoli',
+      'Nigeria': 'Africa/Lagos', 'NG': 'Africa/Lagos',
+      'Kenya': 'Africa/Nairobi', 'KE': 'Africa/Nairobi',
+      'South Africa': 'Africa/Johannesburg', 'ZA': 'Africa/Johannesburg',
+      'Ghana': 'Africa/Accra', 'GH': 'Africa/Accra',
+      'Ethiopia': 'Africa/Addis_Ababa', 'ET': 'Africa/Addis_Ababa',
+      'Tanzania': 'Africa/Dar_es_Salaam', 'TZ': 'Africa/Dar_es_Salaam',
+      'Angola': 'Africa/Luanda', 'Mozambique': 'Africa/Maputo',
+      // ── 南亚 ──
+      'India': 'Asia/Kolkata', 'IN': 'Asia/Kolkata',
+      'Pakistan': 'Asia/Karachi', 'PK': 'Asia/Karachi',
+      'Bangladesh': 'Asia/Dhaka', 'BD': 'Asia/Dhaka',
+      'Sri Lanka': 'Asia/Colombo', 'LK': 'Asia/Colombo',
+      'Nepal': 'Asia/Kathmandu', 'NP': 'Asia/Kathmandu',
+      // ── 东亚 ──
+      'China': 'Asia/Shanghai', 'CN': 'Asia/Shanghai',
+      'Hong Kong': 'Asia/Hong_Kong', 'HK': 'Asia/Hong_Kong',
+      'Taiwan': 'Asia/Taipei', 'TW': 'Asia/Taipei',
+      'Japan': 'Asia/Tokyo', 'JP': 'Asia/Tokyo',
+      'South Korea': 'Asia/Seoul', 'Korea': 'Asia/Seoul', 'KR': 'Asia/Seoul',
+      'Mongolia': 'Asia/Ulaanbaatar', 'MN': 'Asia/Ulaanbaatar',
+      // ── 东南亚 ──
+      'Singapore': 'Asia/Singapore', 'SG': 'Asia/Singapore',
+      'Thailand': 'Asia/Bangkok', 'TH': 'Asia/Bangkok',
+      'Vietnam': 'Asia/Ho_Chi_Minh', 'VN': 'Asia/Ho_Chi_Minh',
+      'Malaysia': 'Asia/Kuala_Lumpur', 'MY': 'Asia/Kuala_Lumpur',
+      'Indonesia': 'Asia/Jakarta', 'ID': 'Asia/Jakarta',
+      'Philippines': 'Asia/Manila', 'PH': 'Asia/Manila',
+      'Cambodia': 'Asia/Phnom_Penh', 'KH': 'Asia/Phnom_Penh',
+      'Myanmar': 'Asia/Yangon', 'MM': 'Asia/Yangon',
+      'Laos': 'Asia/Vientiane', 'Brunei': 'Asia/Brunei',
+      // ── 大洋洲 ──
+      'Australia': 'Australia/Sydney', 'AU': 'Australia/Sydney',
+      'New Zealand': 'Pacific/Auckland', 'NZ': 'Pacific/Auckland',
+      'Fiji': 'Pacific/Fiji', 'Papua New Guinea': 'Pacific/Port_Moresby'
     };
 
     // 全球主要出口市场法定公共节日数据库
@@ -1397,29 +1471,345 @@
       ],
       'Sweden': [
         { date: '01-01', name: '元旦', en: "New Year's Day" },
+        { date: '01-06', name: '主显节', en: 'Epiphany' },
         { date: '05-01', name: '劳动节', en: 'May Day' },
         { date: '06-06', name: '瑞典国庆节', en: 'National Day' },
         { date: '06-20', name: '仲夏节', en: 'Midsummer' },
         { date: '10-31', name: '万圣节前夕', en: "All Saints' Eve" },
         { date: '12-24', name: '平安夜', en: 'Christmas Eve' },
+        { date: '12-25', name: '圣诞节', en: 'Christmas Day' },
+        { date: '12-26', name: '节礼日', en: 'Boxing Day' }
+      ],
+      'France': [
+        { date: '01-01', name: '元旦', en: "New Year's Day" },
+        { date: '05-01', name: '劳动节', en: 'Labour Day' },
+        { date: '05-08', name: '二战胜利日', en: 'Victory in Europe Day' },
+        { date: '07-14', name: '法国国庆日', en: 'Bastille Day' },
+        { date: '08-15', name: '圣母升天节', en: 'Assumption Day' },
+        { date: '11-01', name: '万圣节', en: "All Saints' Day" },
+        { date: '11-11', name: '一战停战纪念日', en: 'Armistice Day' },
+        { date: '12-25', name: '圣诞节', en: 'Christmas Day' }
+      ],
+      'Italy': [
+        { date: '01-01', name: '元旦', en: "New Year's Day" },
+        { date: '01-06', name: '主显节', en: 'Epiphany' },
+        { date: '04-25', name: '解放日', en: 'Liberation Day' },
+        { date: '05-01', name: '劳动节', en: 'Labour Day' },
+        { date: '06-02', name: '共和国日', en: 'Republic Day' },
+        { date: '08-15', name: '八月节', en: 'Ferragosto' },
+        { date: '11-01', name: '万圣节', en: "All Saints' Day" },
+        { date: '12-08', name: '圣母无染原罪节', en: 'Immaculate Conception' },
+        { date: '12-25', name: '圣诞节', en: 'Christmas Day' },
+        { date: '12-26', name: '圣斯特凡诺节', en: "St. Stephen's Day" }
+      ],
+      'Spain': [
+        { date: '01-01', name: '元旦', en: "New Year's Day" },
+        { date: '01-06', name: '三王节', en: 'Epiphany' },
+        { date: '05-01', name: '劳动节', en: 'Labour Day' },
+        { date: '08-15', name: '圣母升天节', en: 'Assumption Day' },
+        { date: '10-12', name: '西班牙国庆日', en: 'National Day' },
+        { date: '11-01', name: '万圣节', en: "All Saints' Day" },
+        { date: '12-06', name: '宪法日', en: 'Constitution Day' },
+        { date: '12-25', name: '圣诞节', en: 'Christmas Day' }
+      ],
+      'Netherlands': [
+        { date: '01-01', name: '元旦', en: "New Year's Day" },
+        { date: '04-27', name: '国王节', en: "King's Day" },
+        { date: '05-05', name: '解放日', en: 'Liberation Day' },
+        { date: '12-25', name: '圣诞节', en: 'Christmas Day' },
+        { date: '12-26', name: '节礼日', en: 'Boxing Day' }
+      ],
+      'Poland': [
+        { date: '01-01', name: '元旦', en: "New Year's Day" },
+        { date: '01-06', name: '主显节', en: 'Epiphany' },
+        { date: '05-01', name: '劳动节', en: 'Labour Day' },
+        { date: '05-03', name: '宪法日', en: 'Constitution Day' },
+        { date: '08-15', name: '圣母升天节', en: 'Assumption Day' },
+        { date: '11-01', name: '万圣节', en: "All Saints' Day" },
+        { date: '11-11', name: '独立日', en: 'Independence Day' },
+        { date: '12-25', name: '圣诞节', en: 'Christmas Day' },
+        { date: '12-26', name: '节礼日', en: 'Boxing Day' }
+      ],
+      'Russia': [
+        { date: '01-01', name: '新年', en: "New Year's Day" },
+        { date: '01-07', name: '东正教圣诞节', en: 'Orthodox Christmas' },
+        { date: '02-23', name: '祖国保卫者日', en: 'Defender of the Fatherland Day' },
+        { date: '03-08', name: '国际妇女节', en: "International Women's Day" },
+        { date: '05-01', name: '春季与劳动节', en: 'Spring and Labour Day' },
+        { date: '05-09', name: '胜利日', en: 'Victory Day' },
+        { date: '06-12', name: '俄罗斯日', en: 'Russia Day' },
+        { date: '11-04', name: '民族团结日', en: 'Unity Day' }
+      ],
+      'Turkey': [
+        { date: '01-01', name: '元旦', en: "New Year's Day" },
+        { date: '04-23', name: '国家主权与儿童节', en: 'National Sovereignty and Children\'s Day' },
+        { date: '05-01', name: '劳动节', en: 'Labour and Solidarity Day' },
+        { date: '05-19', name: '青年与体育节', en: 'Youth and Sports Day' },
+        { date: '08-30', name: '胜利日', en: 'Victory Day' },
+        { date: '10-29', name: '共和国日', en: 'Republic Day' }
+      ],
+      'Brazil': [
+        { date: '01-01', name: '元旦', en: "New Year's Day" },
+        { date: '04-21', name: '蒂拉登特斯日', en: 'Tiradentes Day' },
+        { date: '05-01', name: '劳动节', en: 'Labour Day' },
+        { date: '09-07', name: '巴西独立日', en: 'Independence Day' },
+        { date: '10-12', name: '圣母阿帕雷西达节', en: 'Our Lady of Aparecida' },
+        { date: '11-02', name: '亡灵节', en: "All Souls' Day" },
+        { date: '11-15', name: '共和国宣言日', en: 'Republic Proclamation Day' },
+        { date: '12-25', name: '圣诞节', en: 'Christmas Day' },
+        { date: '02-17', name: '狂欢节', en: 'Carnival' }
+      ],
+      'Argentina': [
+        { date: '01-01', name: '元旦', en: "New Year's Day" },
+        { date: '03-24', name: '真相与正义纪念日', en: 'Day of Remembrance for Truth and Justice' },
+        { date: '04-02', name: '马岛战争纪念日', en: 'Malvinas Day' },
+        { date: '05-01', name: '劳动节', en: 'Labour Day' },
+        { date: '05-25', name: '五月革命纪念日', en: 'May Revolution Day' },
+        { date: '07-09', name: '独立日', en: 'Independence Day' },
+        { date: '12-08', name: '圣母无染原罪节', en: 'Immaculate Conception' },
+        { date: '12-25', name: '圣诞节', en: 'Christmas Day' }
+      ],
+      'Chile': [
+        { date: '01-01', name: '元旦', en: "New Year's Day" },
+        { date: '05-01', name: '劳动节', en: 'Labour Day' },
+        { date: '05-21', name: '海军节', en: 'Navy Day' },
+        { date: '09-18', name: '智利独立日', en: 'Independence Day' },
+        { date: '09-19', name: '建军节', en: 'Army Day' },
+        { date: '11-01', name: '万圣节', en: "All Saints' Day" },
+        { date: '12-08', name: '圣母无染原罪节', en: 'Immaculate Conception' },
+        { date: '12-25', name: '圣诞节', en: 'Christmas Day' }
+      ],
+      'Colombia': [
+        { date: '01-01', name: '元旦', en: "New Year's Day" },
+        { date: '05-01', name: '劳动节', en: 'Labour Day' },
+        { date: '07-20', name: '哥伦比亚独立日', en: 'Independence Day' },
+        { date: '08-07', name: '博亚卡战役纪念日', en: 'Battle of Boyacá' },
+        { date: '12-08', name: '圣母无染原罪节', en: 'Immaculate Conception' },
+        { date: '12-25', name: '圣诞节', en: 'Christmas Day' }
+      ],
+      'India': [
+        { date: '01-26', name: '共和国日', en: 'Republic Day' },
+        { date: '03-14', name: '洒红节', en: 'Holi' },
+        { date: '08-15', name: '印度独立日', en: 'Independence Day' },
+        { date: '10-02', name: '甘地诞辰日', en: 'Gandhi Jayanti' },
+        { date: '10-20', name: '排灯节', en: 'Diwali' },
+        { date: '11-04', name: '排灯节次日', en: 'Diwali (Day 2)' },
+        { date: '12-25', name: '圣诞节', en: 'Christmas Day' }
+      ],
+      'Japan': [
+        { date: '01-01', name: '元旦', en: "New Year's Day" },
+        { date: '01-12', name: '成人之日', en: 'Coming of Age Day' },
+        { date: '02-11', name: '建国纪念日', en: 'National Foundation Day' },
+        { date: '04-29', name: '昭和之日', en: 'Showa Day' },
+        { date: '05-03', name: '宪法纪念日', en: 'Constitution Memorial Day' },
+        { date: '05-04', name: '绿之日', en: 'Greenery Day' },
+        { date: '05-05', name: '儿童节', en: "Children's Day" },
+        { date: '07-20', name: '海之日', en: 'Marine Day' },
+        { date: '08-11', name: '山之日', en: 'Mountain Day' },
+        { date: '09-21', name: '敬老之日', en: 'Respect for the Aged Day' },
+        { date: '10-12', name: '体育之日', en: 'Sports Day' },
+        { date: '11-03', name: '文化之日', en: 'Culture Day' },
+        { date: '11-23', name: '勤劳感谢日', en: 'Labor Thanksgiving Day' }
+      ],
+      'South Korea': [
+        { date: '01-01', name: '元旦', en: "New Year's Day" },
+        { date: '02-17', name: '春节', en: 'Seollal (Lunar New Year)' },
+        { date: '03-01', name: '三一节', en: 'Independence Movement Day' },
+        { date: '05-05', name: '儿童节', en: "Children's Day" },
+        { date: '06-06', name: '显忠日', en: 'Memorial Day' },
+        { date: '08-15', name: '光复节', en: 'Liberation Day' },
+        { date: '09-25', name: '中秋节', en: 'Chuseok' },
+        { date: '10-03', name: '开天节', en: 'National Foundation Day' },
+        { date: '10-09', name: '韩文节', en: 'Hangul Day' },
+        { date: '12-25', name: '圣诞节', en: 'Christmas Day' }
+      ],
+      'Singapore': [
+        { date: '01-01', name: '元旦', en: "New Year's Day" },
+        { date: '02-17', name: '农历新年', en: 'Chinese New Year' },
+        { date: '04-03', name: '耶稣受难日', en: 'Good Friday' },
+        { date: '05-01', name: '劳动节', en: 'Labour Day' },
+        { date: '08-09', name: '新加坡国庆日', en: 'National Day' },
+        { date: '10-20', name: '排灯节', en: 'Deepavali' },
+        { date: '12-25', name: '圣诞节', en: 'Christmas Day' }
+      ],
+      'Thailand': [
+        { date: '01-01', name: '元旦', en: "New Year's Day" },
+        { date: '04-06', name: '却克里王朝纪念日', en: 'Chakri Memorial Day' },
+        { date: '04-13', name: '宋干节（泼水节）', en: 'Songkran Festival' },
+        { date: '05-01', name: '劳动节', en: 'Labour Day' },
+        { date: '05-04', name: '加冕纪念日', en: 'Coronation Day' },
+        { date: '07-28', name: '国王诞辰', en: "King's Birthday" },
+        { date: '08-12', name: '王太后诞辰', en: "Queen Mother's Birthday" },
+        { date: '10-13', name: '普密蓬国王纪念日', en: 'King Bhumibol Memorial Day' },
+        { date: '12-05', name: '国庆节与父亲节', en: 'National Day & Father\'s Day' },
+        { date: '12-10', name: '宪法日', en: 'Constitution Day' }
+      ],
+      'Vietnam': [
+        { date: '01-01', name: '元旦', en: "New Year's Day" },
+        { date: '02-17', name: '农历新年（春节）', en: 'Tet (Lunar New Year)' },
+        { date: '04-30', name: '解放日', en: 'Reunification Day' },
+        { date: '05-01', name: '劳动节', en: 'Labour Day' },
+        { date: '09-02', name: '越南国庆日', en: 'National Day' }
+      ],
+      'Malaysia': [
+        { date: '01-01', name: '元旦', en: "New Year's Day" },
+        { date: '02-17', name: '农历新年', en: 'Chinese New Year' },
+        { date: '05-01', name: '劳动节', en: 'Labour Day' },
+        { date: '08-31', name: '马来西亚国庆日', en: 'Merdeka Day' },
+        { date: '09-16', name: '马来西亚成立日', en: 'Malaysia Day' },
+        { date: '12-25', name: '圣诞节', en: 'Christmas Day' }
+      ],
+      'Indonesia': [
+        { date: '01-01', name: '元旦', en: "New Year's Day" },
+        { date: '02-17', name: '农历新年', en: 'Chinese New Year' },
+        { date: '03-19', name: '静居日', en: 'Nyepi (Day of Silence)' },
+        { date: '05-01', name: '劳动节', en: 'Labour Day' },
+        { date: '06-01', name: '潘查希拉诞生日', en: 'Pancasila Day' },
+        { date: '08-17', name: '印尼独立日', en: 'Independence Day' },
+        { date: '12-25', name: '圣诞节', en: 'Christmas Day' }
+      ],
+      'Australia': [
+        { date: '01-01', name: '元旦', en: "New Year's Day" },
+        { date: '01-26', name: '澳大利亚国庆日', en: 'Australia Day' },
+        { date: '04-03', name: '耶稣受难日', en: 'Good Friday' },
+        { date: '04-06', name: '复活节星期一', en: 'Easter Monday' },
+        { date: '04-25', name: '澳新军团日', en: 'Anzac Day' },
+        { date: '06-08', name: '女王诞辰日', en: "Queen's Birthday" },
+        { date: '12-25', name: '圣诞节', en: 'Christmas Day' },
+        { date: '12-26', name: '节礼日', en: 'Boxing Day' }
+      ],
+      'Canada': [
+        { date: '01-01', name: '元旦', en: "New Year's Day" },
+        { date: '04-03', name: '耶稣受难日', en: 'Good Friday' },
+        { date: '05-18', name: '维多利亚日', en: 'Victoria Day' },
+        { date: '07-01', name: '加拿大国庆日', en: 'Canada Day' },
+        { date: '09-07', name: '劳动节', en: 'Labour Day' },
+        { date: '10-12', name: '感恩节', en: 'Thanksgiving Day' },
+        { date: '11-11', name: '国殇纪念日', en: 'Remembrance Day' },
+        { date: '12-25', name: '圣诞节', en: 'Christmas Day' },
+        { date: '12-26', name: '节礼日', en: 'Boxing Day' }
+      ],
+      'United Arab Emirates': [
+        { date: '01-01', name: '元旦', en: "New Year's Day" },
+        { date: '12-02', name: '阿联酋国庆日', en: 'National Day' },
+        { date: '12-03', name: '阿联酋国庆日次日', en: 'National Day (Day 2)' }
+      ],
+      'Saudi Arabia': [
+        { date: '02-22', name: '建国纪念日', en: 'Founding Day' },
+        { date: '09-23', name: '沙特国庆日', en: 'National Day' }
+      ],
+      'South Africa': [
+        { date: '01-01', name: '元旦', en: "New Year's Day" },
+        { date: '03-21', name: '人权日', en: 'Human Rights Day' },
+        { date: '04-03', name: '耶稣受难日', en: 'Good Friday' },
+        { date: '04-06', name: '家庭日', en: 'Family Day' },
+        { date: '04-27', name: '自由日', en: 'Freedom Day' },
+        { date: '05-01', name: '劳动节', en: "Workers' Day" },
+        { date: '06-16', name: '青年日', en: 'Youth Day' },
+        { date: '08-09', name: '妇女节', en: "National Women's Day" },
+        { date: '09-24', name: '遗产日', en: 'Heritage Day' },
+        { date: '12-16', name: '和解日', en: 'Day of Reconciliation' },
+        { date: '12-25', name: '圣诞节', en: 'Christmas Day' },
+        { date: '12-26', name: '仁爱日', en: 'Day of Goodwill' }
+      ],
+      'Egypt': [
+        { date: '01-07', name: '科普特圣诞节', en: 'Coptic Christmas' },
+        { date: '01-25', name: '革命日', en: 'Revolution Day' },
+        { date: '04-25', name: '西奈解放日', en: 'Sinai Liberation Day' },
+        { date: '05-01', name: '劳动节', en: 'Labour Day' },
+        { date: '07-23', name: '革命纪念日', en: 'Revolution Day (July)' },
+        { date: '10-06', name: '武装部队日', en: 'Armed Forces Day' }
+      ],
+      'Nigeria': [
+        { date: '01-01', name: '元旦', en: "New Year's Day" },
+        { date: '05-01', name: '劳动节', en: "Workers' Day" },
+        { date: '06-12', name: '民主日', en: 'Democracy Day' },
+        { date: '10-01', name: '尼日利亚独立日', en: 'Independence Day' },
+        { date: '12-25', name: '圣诞节', en: 'Christmas Day' },
+        { date: '12-26', name: '节礼日', en: 'Boxing Day' }
+      ],
+      'Mexico': [
+        { date: '01-01', name: '新年 (Año Nuevo)', en: "New Year's Day" },
+        { date: '02-05', name: '宪法日', en: 'Constitution Day' },
+        { date: '05-01', name: '国际劳动节', en: 'Labor Day' },
+        { date: '05-05', name: '五月五日节', en: 'Cinco de Mayo' },
+        { date: '09-16', name: '墨西哥独立日', en: 'Independence Day' },
+        { date: '11-01', name: '亡灵节', en: 'Day of the Dead' },
+        { date: '11-02', name: '亡灵节正日', en: 'Day of the Dead' },
+        { date: '11-20', name: '革命节', en: 'Revolution Day' },
         { date: '12-25', name: '圣诞节', en: 'Christmas Day' }
       ]
     };
 
+    // 国家名 → ISO 3166-1 两位国家代码。国旗图标由国家代码自动生成，
+    // 不再逐个手写 emoji，新增国家只需在此补一行。
+    const COUNTRY_ISO_CODE = {
+      // 北美
+      'United States': 'US', 'USA': 'US', 'Canada': 'CA', 'Mexico': 'MX',
+      // 中美洲与加勒比
+      'Guatemala': 'GT', 'Costa Rica': 'CR', 'Panama': 'PA', 'Dominican Republic': 'DO',
+      'Cuba': 'CU', 'Jamaica': 'JM', 'Puerto Rico': 'PR', 'Honduras': 'HN',
+      'El Salvador': 'SV', 'Nicaragua': 'NI',
+      // 南美
+      'Brazil': 'BR', 'Argentina': 'AR', 'Chile': 'CL', 'Colombia': 'CO', 'Peru': 'PE',
+      'Venezuela': 'VE', 'Ecuador': 'EC', 'Bolivia': 'BO', 'Paraguay': 'PY',
+      'Uruguay': 'UY', 'Guyana': 'GY',
+      // 西欧与北欧
+      'Germany': 'DE', 'United Kingdom': 'GB', 'UK': 'GB', 'France': 'FR', 'Italy': 'IT',
+      'Spain': 'ES', 'Portugal': 'PT', 'Netherlands': 'NL', 'Belgium': 'BE',
+      'Luxembourg': 'LU', 'Ireland': 'IE', 'Sweden': 'SE', 'Norway': 'NO',
+      'Denmark': 'DK', 'Finland': 'FI', 'Iceland': 'IS',
+      // 中欧与东欧
+      'Poland': 'PL', 'Switzerland': 'CH', 'Austria': 'AT', 'Czech Republic': 'CZ',
+      'Slovakia': 'SK', 'Hungary': 'HU', 'Romania': 'RO', 'Bulgaria': 'BG',
+      'Greece': 'GR', 'Croatia': 'HR', 'Slovenia': 'SI', 'Serbia': 'RS',
+      'Ukraine': 'UA', 'Russia': 'RU', 'Turkey': 'TR',
+      'Lithuania': 'LT', 'Latvia': 'LV', 'Estonia': 'EE',
+      // 中东与西亚
+      'United Arab Emirates': 'AE', 'UAE': 'AE', 'Saudi Arabia': 'SA', 'Qatar': 'QA',
+      'Kuwait': 'KW', 'Bahrain': 'BH', 'Oman': 'OM', 'Israel': 'IL', 'Jordan': 'JO',
+      'Lebanon': 'LB', 'Iraq': 'IQ', 'Iran': 'IR',
+      // 非洲
+      'Egypt': 'EG', 'Morocco': 'MA', 'Algeria': 'DZ', 'Tunisia': 'TN', 'Libya': 'LY',
+      'Nigeria': 'NG', 'Kenya': 'KE', 'South Africa': 'ZA', 'Ghana': 'GH',
+      'Ethiopia': 'ET', 'Tanzania': 'TZ', 'Angola': 'AO', 'Mozambique': 'MZ',
+      // 南亚
+      'India': 'IN', 'Pakistan': 'PK', 'Bangladesh': 'BD', 'Sri Lanka': 'LK', 'Nepal': 'NP',
+      // 东亚
+      'China': 'CN', 'Hong Kong': 'HK', 'Taiwan': 'TW', 'Japan': 'JP',
+      'South Korea': 'KR', 'Korea': 'KR', 'Mongolia': 'MN',
+      // 东南亚
+      'Singapore': 'SG', 'Thailand': 'TH', 'Vietnam': 'VN', 'Malaysia': 'MY',
+      'Indonesia': 'ID', 'Philippines': 'PH', 'Cambodia': 'KH', 'Myanmar': 'MM',
+      'Laos': 'LA', 'Brunei': 'BN',
+      // 大洋洲
+      'Australia': 'AU', 'New Zealand': 'NZ', 'Fiji': 'FJ', 'Papua New Guinea': 'PG'
+    };
+
+    // 由两位国家代码计算国旗 emoji（区域指示符组合，Unicode 标准做法）
+    function isoToFlag(iso) {
+      if (!iso || iso.length !== 2) return '🌐';
+      const A = 0x1F1E6;
+      const base = 'A'.charCodeAt(0);
+      const up = iso.toUpperCase();
+      try {
+        return String.fromCodePoint(
+          A + (up.charCodeAt(0) - base),
+          A + (up.charCodeAt(1) - base)
+        );
+      } catch (e) {
+        return '🌐';
+      }
+    }
+
     function getCountryFlag(country) {
-      const flags = {
-        'United States': '🇺🇸', 'USA': '🇺🇸', 'Canada': '🇨🇦', 'Mexico': '🇲🇽',
-        'Germany': '🇩🇪', 'United Kingdom': '🇬🇧', 'UK': '🇬🇧', 'France': '🇫🇷',
-        'Italy': '🇮🇹', 'Spain': '🇪🇸', 'Netherlands': '🇳🇱', 'Belgium': '🇧🇪',
-        'Sweden': '🇸🇪', 'Norway': '🇳🇴', 'Denmark': '🇩🇰', 'Finland': '🇫🇮',
-        'Poland': '🇵🇱', 'Switzerland': '🇨🇭', 'Austria': '🇦🇹', 'Turkey': '🇹🇷', 'Russia': '🇷🇺',
-        'United Arab Emirates': '🇦🇪', 'UAE': '🇦🇪', 'Saudi Arabia': '🇸🇦', 'Qatar': '🇶🇦',
-        'China': '🇨🇳', 'Singapore': '🇸🇬', 'Japan': '🇯🇵', 'South Korea': '🇰🇷', 'Korea': '🇰🇷',
-        'Thailand': '🇹🇭', 'Vietnam': '🇻🇳', 'Malaysia': '🇲🇾', 'Indonesia': '🇮🇩', 'India': '🇮🇳',
-        'Brazil': '🇧🇷', 'Argentina': '🇦🇷', 'Chile': '🇨🇱', 'Colombia': '🇨🇴',
-        'Australia': '🇦🇺', 'New Zealand': '🇳🇿', 'Egypt': '🇪🇬', 'South Africa': '🇿🇦'
-      };
-      return flags[country] || '🌐';
+      if (!country) return '🌐';
+      const key = String(country).trim();
+      const iso = COUNTRY_ISO_CODE[key] || COUNTRY_ISO_CODE[key.replace(/\s+/g, ' ')];
+      if (iso) return isoToFlag(iso);
+      // 用户直接填了两位国家代码时也能识别
+      if (/^[A-Za-z]{2}$/.test(key)) return isoToFlag(key);
+      return '🌐';
     }
 
     // 核心函数：根据国家计算当地实时时间、工作状态、今日节日与近期临近节日
