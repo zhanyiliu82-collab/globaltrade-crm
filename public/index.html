@@ -423,6 +423,41 @@
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
       gap: 10px;
+      max-height: 420px;
+      overflow-y: auto;
+      padding-right: 4px;
+    }
+    .world-clock-grid::-webkit-scrollbar { width: 6px; }
+    .world-clock-grid::-webkit-scrollbar-thumb {
+      background: rgba(255,255,255,0.18);
+      border-radius: 3px;
+    }
+    .clock-region-tabs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-bottom: 12px;
+    }
+    .clock-region-tab {
+      background: rgba(255,255,255,0.07);
+      border: 1px solid rgba(255,255,255,0.1);
+      color: #94a3b8;
+      font-size: 12px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      cursor: pointer;
+      transition: all 0.15s;
+      font-family: inherit;
+    }
+    .clock-region-tab:hover {
+      background: rgba(255,255,255,0.14);
+      color: #e2e8f0;
+    }
+    .clock-region-tab.active {
+      background: #2563eb;
+      border-color: #3b82f6;
+      color: #fff;
+      font-weight: 600;
     }
     .clock-card {
       background: rgba(255,255,255,0.06);
@@ -693,11 +728,15 @@
           <div class="world-clock-header">
             <div style="display: flex; align-items: center; gap: 8px;">
               <span style="font-size: 18px;">🌍</span>
-              <strong style="font-size: 15px; letter-spacing: 0.5px;">全球外贸金融与航运枢纽实时时区 (World Time Zones)</strong>
+              <strong style="font-size: 15px; letter-spacing: 0.5px;">全球外贸金融与航运枢纽实时时区</strong>
+              <span style="font-size: 12px; color: #64748b;" id="clockCountBadge"></span>
             </div>
             <div style="font-size: 13px; color: #94a3b8; display: flex; align-items: center; gap: 12px;">
               <span>📅 本地北京时间：<strong id="localClockDate" style="color: #38bdf8;">--</strong> <span id="localClockTime" style="color: #fff; font-family: monospace; font-weight: bold;">--:--:--</span></span>
             </div>
+          </div>
+          <div class="clock-region-tabs" id="clockRegionTabs">
+            <!-- 区域筛选标签，动态生成 -->
           </div>
           <div class="world-clock-grid" id="worldClockGrid">
             <!-- 动态每秒更新 -->
@@ -1892,27 +1931,144 @@
     }
 
     // 全球主要外贸航运与金融中心（覆盖全球各大贸易洲际枢纽）
+    // 世界时钟墙：按区域分组的全球主要贸易城市
     const GLOBAL_TRADING_HUBS = [
-      { city: '北京/宁波/香港', flag: '🇨🇳', tz: 'Asia/Shanghai', note: '中国总部制造中心' },
-      { city: '东京 (Tokyo)', flag: '🇯🇵', tz: 'Asia/Tokyo', note: '东亚消费主力' },
-      { city: '新加坡 (Singapore)', flag: '🇸🇬', tz: 'Asia/Singapore', note: '东南亚金融航运中枢' },
-      { city: '曼谷/雅加达', flag: '🇹🇭', tz: 'Asia/Bangkok', note: '东盟制造中转' },
-      { city: '孟买 (Mumbai)', flag: '🇮🇳', tz: 'Asia/Kolkata', note: '南亚大市场' },
-      { city: '迪拜 (Dubai)', flag: '🇦🇪', tz: 'Asia/Dubai', note: '中东商贸金融枢纽' },
-      { city: '利雅得 (Riyadh)', flag: '🇸🇦', tz: 'Asia/Riyadh', note: '海湾自贸核心' },
-      { city: '伊斯坦布尔', flag: '🇹🇷', tz: 'Europe/Istanbul', note: '欧亚大陆桥' },
-      { city: '法兰克福/柏林', flag: '🇩🇪', tz: 'Europe/Berlin', note: '欧洲核心制造中心' },
-      { city: '巴黎 (Paris)', flag: '🇫🇷', tz: 'Europe/Paris', note: '西欧大陆中心' },
-      { city: '伦敦 (London)', flag: '🇬🇧', tz: 'Europe/London', note: '西欧航运金融' },
-      { city: '开罗 (Cairo)', flag: '🇪🇬', tz: 'Africa/Cairo', note: '北非/苏伊士要道' },
-      { city: '约翰内斯堡', flag: '🇿🇦', tz: 'Africa/Johannesburg', note: '南部非洲经济中心' },
-      { city: '纽约 (New York)', flag: '🇺🇸', tz: 'America/New_York', note: '美东主贸易集散港' },
-      { city: '芝加哥 (Chicago)', flag: '🇺🇸', tz: 'America/Chicago', note: '北美内陆物流中枢' },
-      { city: '洛杉矶 (LA)', flag: '🇺🇸', tz: 'America/Los_Angeles', note: '美西最大海运集装箱港' },
-      { city: '墨西哥城', flag: '🇲🇽', tz: 'America/Mexico_City', note: '北美近岸制造重镇' },
-      { city: '圣保罗 (São Paulo)', flag: '🇧🇷', tz: 'America/Sao_Paulo', note: '南美最大经贸港' },
-      { city: '悉尼 (Sydney)', flag: '🇦🇺', tz: 'Australia/Sydney', note: '大洋洲中心港' }
+      // ── 中国与东亚 ──
+      { city: '北京/上海', flag: '🇨🇳', tz: 'Asia/Shanghai', note: '中国总部制造中心', region: '东亚' },
+      { city: '香港 (Hong Kong)', flag: '🇭🇰', tz: 'Asia/Hong_Kong', note: '自由港与离岸金融', region: '东亚' },
+      { city: '台北 (Taipei)', flag: '🇹🇼', tz: 'Asia/Taipei', note: '电子与精密制造', region: '东亚' },
+      { city: '东京 (Tokyo)', flag: '🇯🇵', tz: 'Asia/Tokyo', note: '东亚消费主力', region: '东亚' },
+      { city: '首尔 (Seoul)', flag: '🇰🇷', tz: 'Asia/Seoul', note: '韩流消费与美妆', region: '东亚' },
+      { city: '乌兰巴托', flag: '🇲🇳', tz: 'Asia/Ulaanbaatar', note: '蒙古矿产贸易', region: '东亚' },
+      // ── 东南亚 ──
+      { city: '新加坡 (Singapore)', flag: '🇸🇬', tz: 'Asia/Singapore', note: '东南亚金融航运中枢', region: '东南亚' },
+      { city: '曼谷 (Bangkok)', flag: '🇹🇭', tz: 'Asia/Bangkok', note: '东盟制造与消费枢纽', region: '东南亚' },
+      { city: '雅加达 (Jakarta)', flag: '🇮🇩', tz: 'Asia/Jakarta', note: '东南亚最大人口市场', region: '东南亚' },
+      { city: '吉隆坡 (Kuala Lumpur)', flag: '🇲🇾', tz: 'Asia/Kuala_Lumpur', note: '马来半岛贸易中心', region: '东南亚' },
+      { city: '胡志明市 (HCMC)', flag: '🇻🇳', tz: 'Asia/Ho_Chi_Minh', note: '越南制造转移首选', region: '东南亚' },
+      { city: '马尼拉 (Manila)', flag: '🇵🇭', tz: 'Asia/Manila', note: '菲律宾消费市场', region: '东南亚' },
+      { city: '金边 (Phnom Penh)', flag: '🇰🇭', tz: 'Asia/Phnom_Penh', note: '柬埔寨新兴制造', region: '东南亚' },
+      { city: '仰光 (Yangon)', flag: '🇲🇲', tz: 'Asia/Yangon', note: '缅甸转口贸易', region: '东南亚' },
+      // ── 南亚 ──
+      { city: '孟买 (Mumbai)', flag: '🇮🇳', tz: 'Asia/Kolkata', note: '南亚最大商业中心', region: '南亚' },
+      { city: '卡拉奇 (Karachi)', flag: '🇵🇰', tz: 'Asia/Karachi', note: '巴基斯坦港口城市', region: '南亚' },
+      { city: '达卡 (Dhaka)', flag: '🇧🇩', tz: 'Asia/Dhaka', note: '孟加拉纺织制造基地', region: '南亚' },
+      { city: '科伦坡 (Colombo)', flag: '🇱🇰', tz: 'Asia/Colombo', note: '斯里兰卡转口枢纽', region: '南亚' },
+      // ── 中东与西亚 ──
+      { city: '迪拜 (Dubai)', flag: '🇦🇪', tz: 'Asia/Dubai', note: '中东商贸金融枢纽', region: '中东' },
+      { city: '利雅得 (Riyadh)', flag: '🇸🇦', tz: 'Asia/Riyadh', note: '海湾自贸核心', region: '中东' },
+      { city: '多哈 (Doha)', flag: '🇶🇦', tz: 'Asia/Qatar', note: '卡塔尔能源中心', region: '中东' },
+      { city: '科威特城', flag: '🇰🇼', tz: 'Asia/Kuwait', note: '科威特采购中枢', region: '中东' },
+      { city: '特拉维夫 (Tel Aviv)', flag: '🇮🇱', tz: 'Asia/Jerusalem', note: '以色列科技与采购', region: '中东' },
+      { city: '德黑兰 (Tehran)', flag: '🇮🇷', tz: 'Asia/Tehran', note: '伊朗工业市场', region: '中东' },
+      { city: '伊斯坦布尔', flag: '🇹🇷', tz: 'Europe/Istanbul', note: '欧亚大陆桥', region: '中东' },
+      // ── 西欧 ──
+      { city: '伦敦 (London)', flag: '🇬🇧', tz: 'Europe/London', note: '西欧航运金融', region: '西欧' },
+      { city: '巴黎 (Paris)', flag: '🇫🇷', tz: 'Europe/Paris', note: '西欧大陆中心', region: '西欧' },
+      { city: '法兰克福/柏林', flag: '🇩🇪', tz: 'Europe/Berlin', note: '欧洲核心制造中心', region: '西欧' },
+      { city: '阿姆斯特丹', flag: '🇳🇱', tz: 'Europe/Amsterdam', note: '鹿特丹港口腹地', region: '西欧' },
+      { city: '布鲁塞尔', flag: '🇧🇪', tz: 'Europe/Brussels', note: '欧盟总部所在地', region: '西欧' },
+      { city: '米兰/罗马', flag: '🇮🇹', tz: 'Europe/Rome', note: '南欧时尚与制造', region: '西欧' },
+      { city: '马德里 (Madrid)', flag: '🇪🇸', tz: 'Europe/Madrid', note: '南欧与拉美门户', region: '西欧' },
+      { city: '里斯本 (Lisbon)', flag: '🇵🇹', tz: 'Europe/Lisbon', note: '葡萄牙语区枢纽', region: '西欧' },
+      { city: '都柏林 (Dublin)', flag: '🇮🇪', tz: 'Europe/Dublin', note: '爱尔兰科技聚集地', region: '西欧' },
+      // ── 北欧与中欧 ──
+      { city: '斯德哥尔摩', flag: '🇸🇪', tz: 'Europe/Stockholm', note: '北欧设计与消费', region: '北欧' },
+      { city: '奥斯陆 (Oslo)', flag: '🇳🇴', tz: 'Europe/Oslo', note: '挪威海事与能源', region: '北欧' },
+      { city: '哥本哈根', flag: '🇩🇰', tz: 'Europe/Copenhagen', note: '丹麦航运总部', region: '北欧' },
+      { city: '赫尔辛基', flag: '🇫🇮', tz: 'Europe/Helsinki', note: '芬兰科技创新', region: '北欧' },
+      { city: '苏黎世 (Zurich)', flag: '🇨🇭', tz: 'Europe/Zurich', note: '瑞士金融与精密制造', region: '中欧' },
+      { city: '维也纳 (Vienna)', flag: '🇦🇹', tz: 'Europe/Vienna', note: '奥地利贸易中心', region: '中欧' },
+      { city: '华沙 (Warsaw)', flag: '🇵🇱', tz: 'Europe/Warsaw', note: '波兰制造与中转', region: '中欧' },
+      { city: '布拉格 (Prague)', flag: '🇨🇿', tz: 'Europe/Prague', note: '捷克工业重镇', region: '中欧' },
+      // ── 东欧与俄罗斯 ──
+      { city: '莫斯科 (Moscow)', flag: '🇷🇺', tz: 'Europe/Moscow', note: '俄罗斯贸易核心', region: '东欧' },
+      { city: '基辅 (Kyiv)', flag: '🇺🇦', tz: 'Europe/Kiev', note: '乌克兰农业出口', region: '东欧' },
+      { city: '布加勒斯特', flag: '🇷🇴', tz: 'Europe/Bucharest', note: '罗马尼亚制造转移', region: '东欧' },
+      { city: '雅典 (Athens)', flag: '🇬🇷', tz: 'Europe/Athens', note: '希腊航运大国', region: '东欧' },
+      // ── 北非 ──
+      { city: '开罗 (Cairo)', flag: '🇪🇬', tz: 'Africa/Cairo', note: '北非/苏伊士要道', region: '非洲' },
+      { city: '卡萨布兰卡', flag: '🇲🇦', tz: 'Africa/Casablanca', note: '摩洛哥汽车制造', region: '非洲' },
+      { city: '阿尔及尔 (Algiers)', flag: '🇩🇿', tz: 'Africa/Algiers', note: '阿尔及利亚能源', region: '非洲' },
+      { city: '突尼斯城', flag: '🇹🇳', tz: 'Africa/Tunis', note: '突尼斯纺织出口', region: '非洲' },
+      // ── 撒哈拉以南非洲 ──
+      { city: '拉各斯 (Lagos)', flag: '🇳🇬', tz: 'Africa/Lagos', note: '尼日利亚最大市场', region: '非洲' },
+      { city: '内罗毕 (Nairobi)', flag: '🇰🇪', tz: 'Africa/Nairobi', note: '东非区域枢纽', region: '非洲' },
+      { city: '约翰内斯堡', flag: '🇿🇦', tz: 'Africa/Johannesburg', note: '南部非洲经济中心', region: '非洲' },
+      { city: '阿克拉 (Accra)', flag: '🇬🇭', tz: 'Africa/Accra', note: '加纳西非门户', region: '非洲' },
+      { city: '亚的斯亚贝巴', flag: '🇪🇹', tz: 'Africa/Addis_Ababa', note: '埃塞俄比亚制造基地', region: '非洲' },
+      // ── 北美 ──
+      { city: '纽约 (New York)', flag: '🇺🇸', tz: 'America/New_York', note: '美东主贸易集散港', region: '北美' },
+      { city: '芝加哥 (Chicago)', flag: '🇺🇸', tz: 'America/Chicago', note: '北美内陆物流中枢', region: '北美' },
+      { city: '丹佛 (Denver)', flag: '🇺🇸', tz: 'America/Denver', note: '美中西部市场', region: '北美' },
+      { city: '洛杉矶 (LA)', flag: '🇺🇸', tz: 'America/Los_Angeles', note: '美西最大海运港', region: '北美' },
+      { city: '多伦多 (Toronto)', flag: '🇨🇦', tz: 'America/Toronto', note: '加拿大东部最大城市', region: '北美' },
+      { city: '温哥华 (Vancouver)', flag: '🇨🇦', tz: 'America/Vancouver', note: '北美西岸对华门户', region: '北美' },
+      { city: '墨西哥城', flag: '🇲🇽', tz: 'America/Mexico_City', note: '北美近岸制造重镇', region: '北美' },
+      // ── 拉美 ──
+      { city: '圣保罗 (São Paulo)', flag: '🇧🇷', tz: 'America/Sao_Paulo', note: '南美最大经贸港', region: '拉美' },
+      { city: '布宜诺斯艾利斯', flag: '🇦🇷', tz: 'America/Argentina/Buenos_Aires', note: '阿根廷贸易中心', region: '拉美' },
+      { city: '圣地亚哥 (Santiago)', flag: '🇨🇱', tz: 'America/Santiago', note: '智利跨境贸易', region: '拉美' },
+      { city: '利马 (Lima)', flag: '🇵🇪', tz: 'America/Lima', note: '秘鲁矿产与消费', region: '拉美' },
+      { city: '波哥大 (Bogotá)', flag: '🇨🇴', tz: 'America/Bogota', note: '哥伦比亚西语市场', region: '拉美' },
+      { city: '巴拿马城', flag: '🇵🇦', tz: 'America/Panama', note: '巴拿马运河航运', region: '拉美' },
+      // ── 大洋洲 ──
+      { city: '悉尼 (Sydney)', flag: '🇦🇺', tz: 'Australia/Sydney', note: '大洋洲中心港', region: '大洋洲' },
+      { city: '珀斯 (Perth)', flag: '🇦🇺', tz: 'Australia/Perth', note: '澳洲西岸矿产', region: '大洋洲' },
+      { city: '奥克兰 (Auckland)', flag: '🇳🇿', tz: 'Pacific/Auckland', note: '新西兰贸易中心', region: '大洋洲' }
     ];
+
+    // 决定哪些城市需要渲染（按区域筛选）
+    let activeClockRegion = '全部';
+
+    function buildClockCard(hub, now) {
+      let timeStr = '--:--:--';
+      let hour = 12;
+      try {
+        timeStr = new Intl.DateTimeFormat('en-GB', {
+          timeZone: hub.tz,
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit',
+          hour12: false
+        }).format(now);
+        hour = parseInt(timeStr.split(':')[0], 10);
+      } catch (e) {}
+
+      let statusText = '', statusColor = '#10b981';
+      if (hour >= 9 && hour < 18) {
+        statusText = '🟢 工作中'; statusColor = '#34d399';
+      } else if ((hour >= 7 && hour < 9) || (hour >= 18 && hour < 22)) {
+        statusText = '🟡 非工作时间'; statusColor = '#fbbf24';
+      } else {
+        statusText = '🔴 深夜休息'; statusColor = '#f87171';
+      }
+
+      return `
+        <div class="clock-card" title="${hub.note || ''}">
+          <div class="clock-city"><span>${hub.flag}</span> <span>${hub.city}</span></div>
+          <div class="clock-time">${timeStr}</div>
+          <div class="clock-status" style="color: ${statusColor};">${statusText}</div>
+        </div>
+      `;
+    }
+
+    function renderRegionTabs() {
+      const tabsEl = document.getElementById('clockRegionTabs');
+      if (!tabsEl) return;
+      const regions = ['全部', ...new Set(GLOBAL_TRADING_HUBS.map(h => h.region).filter(Boolean))];
+      tabsEl.innerHTML = regions.map(r => {
+        const active = r === activeClockRegion;
+        const count = r === '全部' ? GLOBAL_TRADING_HUBS.length : GLOBAL_TRADING_HUBS.filter(h => h.region === r).length;
+        return `<button class="clock-region-tab${active ? ' active' : ''}" onclick="setClockRegion('${r}')">${r} <span style="opacity:.65">${count}</span></button>`;
+      }).join('');
+    }
+
+    function setClockRegion(region) {
+      activeClockRegion = region;
+      renderRegionTabs();
+      updateWorldClocks();
+    }
 
     function updateWorldClocks() {
       const now = new Date();
@@ -1932,45 +2088,19 @@
         if (localTimeEl) localTimeEl.innerText = localTimeStr;
       } catch (e) {}
 
-      // 遍历更新全球时区
       const grid = document.getElementById('worldClockGrid');
       if (!grid) return;
 
-      grid.innerHTML = GLOBAL_TRADING_HUBS.map(hub => {
-        let timeStr = '--:--:--';
-        let hour = 12;
-        try {
-          timeStr = new Intl.DateTimeFormat('en-GB', {
-            timeZone: hub.tz,
-            hour: '2-digit',
-            minute: '2-digit',
-            second: '2-digit',
-            hour12: false
-          }).format(now);
-          hour = parseInt(timeStr.split(':')[0], 10);
-        } catch (e) {}
+      const list = activeClockRegion === '全部'
+        ? GLOBAL_TRADING_HUBS
+        : GLOBAL_TRADING_HUBS.filter(h => h.region === activeClockRegion);
 
-        let statusText = '';
-        let statusColor = '#10b981';
-        if (hour >= 9 && hour < 18) {
-          statusText = '🟢 工作中';
-          statusColor = '#34d399';
-        } else if ((hour >= 7 && hour < 9) || (hour >= 18 && hour < 22)) {
-          statusText = '🟡 非工作时间';
-          statusColor = '#fbbf24';
-        } else {
-          statusText = '🔴 深夜休息';
-          statusColor = '#f87171';
-        }
+      grid.innerHTML = list.map(hub => buildClockCard(hub, now)).join('');
 
-        return `
-          <div class="clock-card">
-            <div class="clock-city"><span>${hub.flag}</span> <span>${hub.city}</span></div>
-            <div class="clock-time">${timeStr}</div>
-            <div class="clock-status" style="color: ${statusColor};">${statusText}</div>
-          </div>
-        `;
-      }).join('');
+      const badge = document.getElementById('clockCountBadge');
+      if (badge) {
+        badge.innerText = `· ${list.length} / ${GLOBAL_TRADING_HUBS.length} 城市`;
+      }
     }
 
     // 全球外贸重要节日计划排期表与实战策略
@@ -2510,6 +2640,7 @@
       loadCustomers();
       loadQuotations();
       loadProducts();
+      renderRegionTabs();
       updateWorldClocks();
       renderGlobalHolidayPlanner();
     }
@@ -2517,6 +2648,7 @@
     // 页面初始化
     document.addEventListener('DOMContentLoaded', () => {
       checkAuth();
+      renderRegionTabs();
       setInterval(updateWorldClocks, 1000); // 世界时区时钟：每 1 秒实时动态跳动走时
       setInterval(() => {
         if (!currentUser) return;
