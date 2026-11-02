@@ -541,25 +541,30 @@ app.get('/api/products', (req, res) => {
   res.json({ list: data.products || [] });
 });
 
-app.post('/api/products', (req, res) => {
-  const data = loadData();
-  if (!data.products) data.products = [];
-  const body = req.body;
-
+// 产品字段构造（新增与编辑共用）
+function buildProductFields(body) {
   const l = Number(body.cartonL || 0);
   const w = Number(body.cartonW || 0);
   const h = Number(body.cartonH || 0);
-  const cbm = (l > 0 && w > 0 && h > 0) ? Number(((l * w * h) / 1000000).toFixed(4)) : (Number(body.cbm) || 0.05);
+  const cbm = (l > 0 && w > 0 && h > 0)
+    ? Number(((l * w * h) / 1000000).toFixed(4))
+    : (Number(body.cbm) || 0.05);
 
-  const newProd = {
-    id: `PROD-${Date.now().toString().slice(-6)}`,
+  const rate = body.taxRefundRate;
+  const taxRefundRate = rate
+    ? (String(rate).includes('%') ? String(rate) : `${rate}%`)
+    : '13%';
+
+  return {
     sku: body.sku || `SKU-${Date.now().toString().slice(-4)}`,
     nameZh: body.nameZh || '未命名产品',
     nameEn: body.nameEn || 'Standard Export Product',
     hsCode: body.hsCode || '8424899990',
-    taxRefundRate: body.taxRefundRate ? `${body.taxRefundRate}%` : '13%',
+    taxRefundRate: taxRefundRate,
     unit: body.unit || 'pcs',
     refPriceUSD: Number(body.refPriceUSD || 0),
+    costPriceCNY: Number(body.costPriceCNY || 0),
+    factoryPriceCNY: Number(body.factoryPriceCNY || 0),
     qtyPerCarton: Number(body.qtyPerCarton || 500),
     cartonL: l,
     cartonW: w,
@@ -568,12 +573,51 @@ app.post('/api/products', (req, res) => {
     nwPerCarton: Number(body.nwPerCarton || 10),
     gwPerCarton: Number(body.gwPerCarton || 11.5),
     spec: body.spec || '',
+    image: body.image || ''
+  };
+}
+
+app.post('/api/products', (req, res) => {
+  const data = loadData();
+  if (!data.products) data.products = [];
+
+  const newProd = {
+    id: `PROD-${Date.now().toString().slice(-6)}`,
+    ...buildProductFields(req.body),
     createdAt: new Date().toISOString().split('T')[0]
   };
 
   data.products.unshift(newProd);
   saveData(data);
   res.json({ success: true, product: newProd });
+});
+
+// 编辑产品
+app.put('/api/products/:id', (req, res) => {
+  const data = loadData();
+  if (!data.products) data.products = [];
+
+  const idx = data.products.findIndex(p => p.id === req.params.id);
+  if (idx < 0) return res.status(404).json({ error: '产品不存在' });
+
+  const old = data.products[idx];
+  const body = req.body;
+  const merged = { ...old, ...body };
+  const fields = buildProductFields(merged);
+
+  // 前端未传图片时保留原图，避免编辑其他字段导致图片丢失
+  if (body.image === undefined) fields.image = old.image || '';
+  // 前端未传 SKU 时保留原 SKU
+  if (!body.sku) fields.sku = old.sku;
+
+  data.products[idx] = {
+    ...old,
+    ...fields,
+    updatedAt: new Date().toISOString().replace('T', ' ').substring(0, 16)
+  };
+
+  saveData(data);
+  res.json({ success: true, product: data.products[idx] });
 });
 
 app.delete('/api/products/:id', (req, res) => {
