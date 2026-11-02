@@ -459,6 +459,50 @@
       color: #fff;
       font-weight: 600;
     }
+    .clock-toolbar {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      margin-bottom: 10px;
+      flex-wrap: wrap;
+    }
+    .clock-search {
+      flex: 1;
+      min-width: 200px;
+      max-width: 340px;
+      background: rgba(255,255,255,0.07);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 6px;
+      padding: 7px 12px;
+      color: #e2e8f0;
+      font-size: 13px;
+      outline: none;
+      font-family: inherit;
+      transition: all 0.15s;
+    }
+    .clock-search::placeholder { color: #64748b; }
+    .clock-search:focus {
+      background: rgba(255,255,255,0.11);
+      border-color: #3b82f6;
+    }
+    .clock-search-clear {
+      background: rgba(255,255,255,0.07);
+      border: 1px solid rgba(255,255,255,0.12);
+      color: #94a3b8;
+      border-radius: 6px;
+      padding: 7px 10px;
+      font-size: 12px;
+      cursor: pointer;
+      font-family: inherit;
+    }
+    .clock-search-clear:hover { background: rgba(255,255,255,0.14); color: #e2e8f0; }
+    .clock-empty {
+      grid-column: 1 / -1;
+      text-align: center;
+      padding: 30px;
+      color: #64748b;
+      font-size: 13px;
+    }
     .clock-card {
       background: rgba(255,255,255,0.06);
       border: 1px solid rgba(255,255,255,0.08);
@@ -734,6 +778,13 @@
             <div style="font-size: 13px; color: #94a3b8; display: flex; align-items: center; gap: 12px;">
               <span>📅 本地北京时间：<strong id="localClockDate" style="color: #38bdf8;">--</strong> <span id="localClockTime" style="color: #fff; font-family: monospace; font-weight: bold;">--:--:--</span></span>
             </div>
+          </div>
+          <div class="clock-toolbar">
+            <input type="text" id="clockSearchInput" class="clock-search"
+                   placeholder="🔍 搜索国家 / 城市 / 时区（如 Japan、纽约、Asia/Dubai）"
+                   oninput="onClockSearch()" autocomplete="off">
+            <button type="button" class="clock-search-clear" id="clockClearBtn"
+                    style="display:none;" onclick="clearClockSearch()">清除</button>
           </div>
           <div class="clock-region-tabs" id="clockRegionTabs">
             <!-- 区域筛选标签，动态生成 -->
@@ -1841,6 +1892,40 @@
       }
     }
 
+    // 时区搜索用的国家中文别名（让「日本」「德国」「巴西」这类中文输入也能命中城市）
+    const COUNTRY_CN_ALIAS = {
+      'Asia/Shanghai': ['中国', '大陆'], 'Asia/Hong_Kong': ['香港'], 'Asia/Taipei': ['台湾', '台北'],
+      'Asia/Tokyo': ['日本'], 'Asia/Seoul': ['韩国', '南韩'], 'Asia/Ulaanbaatar': ['蒙古'],
+      'Asia/Singapore': ['新加坡'], 'Asia/Bangkok': ['泰国'], 'Asia/Jakarta': ['印尼', '印度尼西亚'],
+      'Asia/Kuala_Lumpur': ['马来西亚'], 'Asia/Ho_Chi_Minh': ['越南'], 'Asia/Manila': ['菲律宾'],
+      'Asia/Phnom_Penh': ['柬埔寨'], 'Asia/Yangon': ['缅甸'],
+      'Asia/Kolkata': ['印度'], 'Asia/Karachi': ['巴基斯坦'], 'Asia/Dhaka': ['孟加拉'],
+      'Asia/Colombo': ['斯里兰卡'],
+      'Asia/Dubai': ['阿联酋', '迪拜酋长国'], 'Asia/Riyadh': ['沙特', '沙特阿拉伯'],
+      'Asia/Qatar': ['卡塔尔'], 'Asia/Kuwait': ['科威特'], 'Asia/Jerusalem': ['以色列'],
+      'Asia/Tehran': ['伊朗'], 'Europe/Istanbul': ['土耳其'],
+      'Europe/London': ['英国'], 'Europe/Paris': ['法国'], 'Europe/Berlin': ['德国'],
+      'Europe/Amsterdam': ['荷兰'], 'Europe/Brussels': ['比利时'], 'Europe/Rome': ['意大利'],
+      'Europe/Madrid': ['西班牙'], 'Europe/Lisbon': ['葡萄牙'], 'Europe/Dublin': ['爱尔兰'],
+      'Europe/Stockholm': ['瑞典'], 'Europe/Oslo': ['挪威'], 'Europe/Copenhagen': ['丹麦'],
+      'Europe/Helsinki': ['芬兰'], 'Europe/Zurich': ['瑞士'], 'Europe/Vienna': ['奥地利'],
+      'Europe/Warsaw': ['波兰'], 'Europe/Prague': ['捷克'],
+      'Europe/Moscow': ['俄罗斯'], 'Europe/Kiev': ['乌克兰'], 'Europe/Bucharest': ['罗马尼亚'],
+      'Europe/Athens': ['希腊'],
+      'Africa/Cairo': ['埃及'], 'Africa/Casablanca': ['摩洛哥'], 'Africa/Algiers': ['阿尔及利亚'],
+      'Africa/Tunis': ['突尼斯'], 'Africa/Lagos': ['尼日利亚'], 'Africa/Nairobi': ['肯尼亚'],
+      'Africa/Johannesburg': ['南非'], 'Africa/Accra': ['加纳'], 'Africa/Addis_Ababa': ['埃塞俄比亚'],
+      'America/New_York': ['美国', '美东'], 'America/Chicago': ['美国', '美中'],
+      'America/Denver': ['美国', '美西'], 'America/Los_Angeles': ['美国', '美西'],
+      'America/Toronto': ['加拿大', '加东'], 'America/Vancouver': ['加拿大', '加西'],
+      'America/Mexico_City': ['墨西哥'],
+      'America/Sao_Paulo': ['巴西'], 'America/Argentina/Buenos_Aires': ['阿根廷'],
+      'America/Santiago': ['智利'], 'America/Lima': ['秘鲁'], 'America/Bogota': ['哥伦比亚'],
+      'America/Panama': ['巴拿马'],
+      'Australia/Sydney': ['澳大利亚', '澳洲'], 'Australia/Perth': ['澳大利亚', '澳洲'],
+      'Pacific/Auckland': ['新西兰']
+    };
+
     function getCountryFlag(country) {
       if (!country) return '🌐';
       const key = String(country).trim();
@@ -1852,9 +1937,78 @@
     }
 
     // 核心函数：根据国家计算当地实时时间、工作状态、今日节日与近期临近节日
+    // 国家名解析：先精确匹配，再忽略大小写 / 空格 / 连字符等变体模糊匹配
+    function resolveCountryTz(countryName) {
+      if (!countryName) return null;
+      const raw = String(countryName).trim();
+      if (!raw) return null;
+
+      // 找到某时区对应的标准英文国家全名（用于节日数据查询）
+      const stdNameForZone = (zone) => {
+        for (const [name, z] of Object.entries(COUNTRY_TIMEZONE_MAP)) {
+          if (z === zone && name.length > 2 && !/^[A-Z]{2}$/.test(name)) return name;
+        }
+        return zone;
+      };
+
+      // 1. 两位国家代码（如 US、DE、CN）——优先处理，避免 matched 落在缩写上
+      if (/^[A-Za-z]{2}$/.test(raw)) {
+        const upper = raw.toUpperCase();
+        for (const [name, zone] of Object.entries(COUNTRY_TIMEZONE_MAP)) {
+          if (name.length === 2 && name.toUpperCase() === upper) {
+            return { tz: zone, matched: stdNameForZone(zone) };
+          }
+        }
+      }
+
+      // 2. 精确匹配
+      if (COUNTRY_TIMEZONE_MAP[raw]) {
+        return { tz: COUNTRY_TIMEZONE_MAP[raw], matched: stdNameForZone(COUNTRY_TIMEZONE_MAP[raw]) };
+      }
+
+      // 3. 归一化后匹配（去空格、连字符、句点，转小写）
+      const norm = s => String(s).toLowerCase().replace(/[\s\-_.'']/g, '');
+      const target = norm(raw);
+      for (const [name, zone] of Object.entries(COUNTRY_TIMEZONE_MAP)) {
+        if (norm(name) === target) return { tz: zone, matched: stdNameForZone(zone) };
+      }
+
+      // 4. 中文国家名反查（如客户填「日本」「德国」）
+      for (const [zone, cns] of Object.entries(COUNTRY_CN_ALIAS)) {
+        if (cns.some(cn => cn === raw || cn.includes(raw) || raw.includes(cn))) {
+          return { tz: zone, matched: stdNameForZone(zone) };
+        }
+      }
+
+      // 5. 包含匹配（如 "United States of America" 包含 "United States"）
+      for (const [name, zone] of Object.entries(COUNTRY_TIMEZONE_MAP)) {
+        if (name.length > 5 && (target.includes(norm(name)) || norm(name).includes(target))) {
+          return { tz: zone, matched: stdNameForZone(zone) };
+        }
+      }
+
+      return null;
+    }
+
     function getCountryTimeAndHoliday(countryName) {
-      const tz = COUNTRY_TIMEZONE_MAP[countryName] || 'America/New_York';
+      const resolved = resolveCountryTz(countryName);
       const now = new Date();
+
+      // 无法识别时区时明确提示，不再默认套用纽约时间
+      if (!resolved) {
+        return {
+          timeStr: '--:--',
+          hour: 12,
+          statusBadge: '<span class="tz-badge" style="background:#f1f5f9;color:#64748b;border:1px solid #e2e8f0;">时区待识别</span>',
+          holidayBadge: '<div class="holiday-badge" style="background:#f1f5f9;color:#94a3b8;border-color:#e2e8f0;">请填写标准国家名</div>',
+          holidayRaw: null,
+          tz: null,
+          matchedCountry: null
+        };
+      }
+
+      const tz = resolved.tz;
+      const matchedCountry = resolved.matched;
 
       let timeStr = '--:--';
       let hour = 12;
@@ -1892,7 +2046,7 @@
       }
 
       // 2. 检索节日（今日与35天内即将到来的节日）
-      const hList = HOLIDAY_CALENDAR[countryName] || HOLIDAY_CALENDAR['United States'] || [];
+      const hList = HOLIDAY_CALENDAR[matchedCountry] || [];
       const todayHoliday = hList.find(h => h.date === dateMMDD);
 
       let upcoming = null;
@@ -1927,7 +2081,7 @@
         holidayBadge = `<div class="holiday-badge" style="background: #f1f5f9; color: #64748b; border-color: #e2e8f0;">近期无公共假期</div>`;
       }
 
-      return { timeStr, hour, statusBadge, holidayBadge, holidayRaw };
+      return { timeStr, hour, statusBadge, holidayBadge, holidayRaw, tz, matchedCountry };
     }
 
     // 全球主要外贸航运与金融中心（覆盖全球各大贸易洲际枢纽）
@@ -2020,6 +2174,69 @@
 
     // 决定哪些城市需要渲染（按区域筛选）
     let activeClockRegion = '全部';
+    let clockSearchKeyword = '';
+
+    // 大区搜索别名：搜索「亚洲」「欧美」等能一次命中多个区域
+    const CLOCK_REGION_ALIAS = {
+      '亚洲': ['东亚', '东南亚', '南亚', '中东'],
+      '亚洲区': ['东亚', '东南亚', '南亚', '中东'],
+      '亚太': ['东亚', '东南亚', '南亚', '大洋洲'],
+      '亚太区': ['东亚', '东南亚', '南亚', '大洋洲'],
+      '欧亚': ['西欧', '北欧', '中欧', '东欧', '中东'],
+      '欧洲区': ['西欧', '北欧', '中欧', '东欧'],
+      '欧美': ['西欧', '北欧', '中欧', '东欧', '北美'],
+      '非洲区': ['非洲'],
+      '北美区': ['北美'],
+      '拉美区': ['拉美'],
+      '中南美': ['拉美'],
+      '南美': ['拉美']
+    };
+
+    // 搜索匹配：城市名、区域、时区标识、经贸说明、国家中英文名都可命中
+    function matchClockHub(hub, keyword) {
+      if (!keyword) return true;
+      const kwTrim = keyword.trim();
+      const k = kwTrim.toLowerCase().replace(/\s+/g, '');
+      const fields = [hub.city, hub.region, hub.tz, hub.note]
+        .filter(Boolean)
+        .map(s => String(s).toLowerCase().replace(/\s+/g, ''));
+      if (fields.some(f => f.includes(k))) return true;
+
+      // 大区别名：搜索「亚洲」命中东亚/东南亚/南亚/中东
+      const regionMatch = CLOCK_REGION_ALIAS[kwTrim];
+      if (regionMatch && regionMatch.includes(hub.region)) return true;
+
+      // 中文国家别名：优先精确匹配；仅在关键词较长时允许包含匹配
+      const aliases = COUNTRY_CN_ALIAS[hub.tz] || [];
+      if (aliases.some(a => a === kwTrim)) return true;
+      if (kwTrim.length >= 4 && aliases.some(a => a.includes(kwTrim))) return true;
+
+      // 英文国家名反查
+      for (const [country, zone] of Object.entries(COUNTRY_TIMEZONE_MAP)) {
+        if (zone !== hub.tz) continue;
+        if (country.toLowerCase().replace(/\s+/g, '').includes(k)) return true;
+      }
+
+      return false;
+    }
+
+    function onClockSearch() {
+      const input = document.getElementById('clockSearchInput');
+      if (!input) return;
+      clockSearchKeyword = input.value.trim();
+      const clearBtn = document.getElementById('clockClearBtn');
+      if (clearBtn) clearBtn.style.display = clockSearchKeyword ? 'inline-block' : 'none';
+      updateWorldClocks();
+    }
+
+    function clearClockSearch() {
+      const input = document.getElementById('clockSearchInput');
+      if (input) input.value = '';
+      clockSearchKeyword = '';
+      const clearBtn = document.getElementById('clockClearBtn');
+      if (clearBtn) clearBtn.style.display = 'none';
+      updateWorldClocks();
+    }
 
     function buildClockCard(hub, now) {
       let timeStr = '--:--:--';
@@ -2091,15 +2308,27 @@
       const grid = document.getElementById('worldClockGrid');
       if (!grid) return;
 
-      const list = activeClockRegion === '全部'
-        ? GLOBAL_TRADING_HUBS
-        : GLOBAL_TRADING_HUBS.filter(h => h.region === activeClockRegion);
+      // 搜索时跨全部区域查找，不受区域筛选限制
+      let list;
+      if (clockSearchKeyword) {
+        list = GLOBAL_TRADING_HUBS.filter(h => matchClockHub(h, clockSearchKeyword));
+      } else if (activeClockRegion === '全部') {
+        list = GLOBAL_TRADING_HUBS;
+      } else {
+        list = GLOBAL_TRADING_HUBS.filter(h => h.region === activeClockRegion);
+      }
 
-      grid.innerHTML = list.map(hub => buildClockCard(hub, now)).join('');
+      if (list.length === 0) {
+        grid.innerHTML = `<div class="clock-empty">没有找到「${clockSearchKeyword}」对应的城市<br><span style="font-size:12px;">试试输入国家名（Japan）、城市名（东京）或时区（Asia/Tokyo）</span></div>`;
+      } else {
+        grid.innerHTML = list.map(hub => buildClockCard(hub, now)).join('');
+      }
 
       const badge = document.getElementById('clockCountBadge');
       if (badge) {
-        badge.innerText = `· ${list.length} / ${GLOBAL_TRADING_HUBS.length} 城市`;
+        badge.innerText = clockSearchKeyword
+          ? `· 搜索到 ${list.length} 个城市`
+          : `· ${list.length} / ${GLOBAL_TRADING_HUBS.length} 城市`;
       }
     }
 
